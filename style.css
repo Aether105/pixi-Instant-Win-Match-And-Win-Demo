@@ -1,0 +1,44 @@
+body {
+    font-family: sans-serif;
+    background: #0b1520;
+    color: #eaf2ff;
+    text-align: center;
+}
+
+.row, .grid {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0;
+}
+
+.grid {
+    flex-wrap: wrap;
+    width: 240px;
+    margin: 0 auto;
+}
+
+.card {
+    width: 80px;
+    height: 80px;
+    margin: 5;
+    background: #888;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 20px;
+    color: #fff;
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.card.revealed {
+    background: #2e5cff;
+}
+
+#result {
+    margin-top: 20px;
+    font-size: 24px;
+    font-weight: bold;
+}
