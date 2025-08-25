@@ -1,6 +1,15 @@
 import { Application, Text, Container, Graphics } from './node_modules/pixi.js/dist/pixi.mjs';
 
+// --- Loads external data ---
+let gameData;
+async function loadGameData(){
+    const res = await fetch("./data.json");
+    gameData = await res.json();
+}
+
 (async () => {
+    await loadGameData();
+
     const app = new Application();
     await app.init({
         resizeTo: window,
@@ -10,33 +19,23 @@ import { Application, Text, Container, Graphics } from './node_modules/pixi.js/d
 
     // --- Balance and ticket price setup ---
     let balance = 2000; // Starting balance in pence.
-    let ticketPrice = 100; // Default ticket price set at £1.
+    let ticketPrice = gameData.ticketPrices[0]; // Default ticket price set at £1.
     let winThisTicket = 0; // How much the current ticket won.
 
-    const hudText = new Text(`Balance: £${(balance/100).toFixed(2)} | Ticket: £${(ticketPrice/100).toFixed(2)}`, {
+    // The container for the main game (everything goes inside of this).
+    const mainContainer = new Container();
+    app.stage.addChild(mainContainer);
+
+    
+    const hudText = new Text("", {
         fill: 0xffffff,
         fontSize: 20,
         fontWeight: 'bold'
     });
     hudText.anchor.set(0.5, 0);
     hudText.x = app.screen.width * 0.5;
-    hudText.y = 10;
+    hudText.y = 1;
     app.stage.addChild(hudText);
-
-    // --- Game data (initialised per ticket) ---
-    let winningNumbers = [];
-    let playerNumbers = [];
-    const instantWins = ["IW1", "IW2"];
-    let winFound = false;
-
-    // Card layout settings.
-    const cardSpacing = 150; // Space between the cards.
-    const cardWidth = 100;
-    const cardHeight = 100;
-
-    // The container for the main game (everything goes inside of this).
-    const mainContainer = new Container();
-    app.stage.addChild(mainContainer);
 
     // Winning Numbers title.
     const winningTitle = new Text("Winning Numbers", {
@@ -47,10 +46,6 @@ import { Application, Text, Container, Graphics } from './node_modules/pixi.js/d
     winningTitle.anchor.set(0.5);
     mainContainer.addChild(winningTitle);
 
-    // Container for winning number cards.
-    const winningContainer = new Container();
-    mainContainer.addChild(winningContainer);
-
     // Player Numbers title.
     const playerTitle = new Text("Player Numbers", {
         fill: 0xffffff,
@@ -60,12 +55,8 @@ import { Application, Text, Container, Graphics } from './node_modules/pixi.js/d
     playerTitle.anchor.set(0.5);
     mainContainer.addChild(playerTitle);
 
-    // Container for player cards.
-    const playerContainer = new Container();
-    mainContainer.addChild(playerContainer);
-
     // Instruction / result text.
-    const resultText = new Text("Click 'Buy Ticket' to play", {
+    const resultText = new Text("Click a card to reveal a number", {
         fill: 0xffffff,
         fontSize: 24,
         fontWeight: 'bold'
@@ -73,32 +64,36 @@ import { Application, Text, Container, Graphics } from './node_modules/pixi.js/d
     resultText.anchor.set(0.5);
     mainContainer.addChild(resultText);
 
+    // Container for winning number cards.
+    const winningContainer = new Container();
+    mainContainer.addChild(winningContainer);
+
+    // Container for player cards.
+    const playerContainer = new Container();
+    mainContainer.addChild(playerContainer);
+    
+
     // --- Buy Ticket Button ---
-    const buyBtn = new Graphics().roundRect(0, 0, 200, 60, 10).fill(0x0066ff);
+    const buyBtn = new Graphics().roundRect(0, 0, 140, 50, 12).fill(0x0066ff);
     buyBtn.interactive = true;
     buyBtn.cursor = 'pointer';
+
     const buyLabel = new Text("Buy Ticket", {
         fill: 0xffffff,
-        fontSize: 24,
+        fontSize: 23,
         fontWeight: 'bold'
     });
     buyLabel.anchor.set(0.5);
-    buyLabel.position.set(100,30);
+    buyLabel.position.set(70, 25);
     buyBtn.addChild(buyLabel);
-    buyBtn.x = app.screen.width * 0.5 - 100;
-    buyBtn.y = app.screen.height - 65;
-    app.stage.addChild(buyBtn);
+    
 
-    buyBtn.on("pointerdown", () => {
-        if (balance < ticketPrice) {
-            resultText.text = "Not enough funds!";
-            return;
-        }
-        balance -= ticketPrice; // Pays for a ticket.
-        winThisTicket = 0;
-        startNewTicket();
-        updateHUD();
-    });
+    mainContainer.addChild(buyBtn);
+
+    // --- Game data (initialised per ticket) ---
+    let winningNumbers = [];
+    let playerNumbers = [];
+    let winFound = false;
 
     // --- Functions ---
     function updateHUD() {
@@ -106,24 +101,30 @@ import { Application, Text, Container, Graphics } from './node_modules/pixi.js/d
     }
 
     function startNewTicket() {
-        // Resets the state.
-        mainContainer.removeChild(winningContainer);
-        mainContainer.removeChild(playerContainer);
+        if (balance < ticketPrice){
+            resultText.text = "Insufficient funds!";
+            return;
+        }
+
+        /// Deducts ticket cost.
+        balance -= ticketPrice;
+        updateHUD();
+
+        winFound = false;
+        winThisTicket = 0;
+
+        // Picks a random scenario from the JSON.
+        const scenario = gameData.scenarios[
+            Math.floor(Math.random() * gameData.scenarios.length)
+        ];
+
+        winningNumbers = scenario.winningNumbers.slice();
+        playerNumbers = scenario.playerNumbers.slice();
+
+        // Clears the old cards.
         winningContainer.removeChildren();
         playerContainer.removeChildren();
-        mainContainer.addChild(winningContainer);
-        mainContainer.addChild(playerContainer);
-        winFound = false;
 
-        // Generates numbers.
-        winningNumbers = pickNumbers(2, 30);
-        playerNumbers = pickNumbers(6, 30);
-
-        // Adds a possible instant win.
-        if (Math.random() < 0.2) {
-            const randomIndex = Math.floor(Math.random() * playerNumbers.length);
-            playerNumbers[randomIndex] = instantWins[Math.floor(Math.random() * instantWins.length)];
-        }
 
         // Creates the winning and player cards.
         setupCards(winningContainer, winningNumbers, true);
@@ -134,22 +135,13 @@ import { Application, Text, Container, Graphics } from './node_modules/pixi.js/d
     }
 
     function endTicket() {
-        balance += winThisTicket; // Add winnings.
-        updateHUD();
         if (winThisTicket > 0) {
-            resultText.text = `Ticket Won: £${(winThisTicket/100).toFixed(2)}!`;
+            balance += winThisTicket; // Add winnings.
+            resultText.text += `You Won: £${(winThisTicket/100).toFixed(2)}!`;
         } else {
-            resultText.text = "Ticket Lost!";
+            resultText.text = "You Lost! Better luck next time!";
         }
-    }
-
-    function pickNumbers(count, max) {
-        const nums = [];
-        while (nums.length < count) {
-            const n = Math.floor(Math.random() * max) + 1;
-            if (!nums.includes(n)) nums.push(n);
-        }
-        return nums;
+        updateHUD();
     }
 
     // Creates a row of cards.
@@ -158,15 +150,15 @@ import { Application, Text, Container, Graphics } from './node_modules/pixi.js/d
         numbers.forEach((num, index) => {
             const card = createCard(num, isWinningRow);
             // Arranges them in a grid: 3 per row.
-            card.x = (index % 3) * cardSpacing;
-            card.y = Math.floor(index / 3) * cardSpacing;
+            card.x = (index % 3) * 150;
+            card.y = Math.floor(index / 3) * 150;
             container.addChild(card);
         });
     }
 
     // Creates a single card (white square).
     function createCard(num, isWinningRow) {
-        const card = new Graphics().rect(0, 0, cardWidth, cardHeight).fill(0xffffff);
+        const card = new Graphics().rect(0, 0, 100, 100).fill(0xffffff);
         card.interactive = true;
         card.cursor = 'pointer';
 
@@ -175,7 +167,7 @@ import { Application, Text, Container, Graphics } from './node_modules/pixi.js/d
             fontSize: 48
         });
         q.anchor.set(0.5);
-        q.position.set(cardWidth * 0.5, cardHeight * 0.5);
+        q.position.set(50, 50);
         card.addChild(q);
 
         card.on('pointerdown', () => {
@@ -188,21 +180,21 @@ import { Application, Text, Container, Graphics } from './node_modules/pixi.js/d
                 fontSize: 36
             });
             numberText.anchor.set(0.5);
-            numberText.position.set(cardWidth * 0.5, cardHeight * 0.5);
+            numberText.position.set(50, 50);
             card.addChild(numberText);
 
             // Only checks for wins on player cards.
             if (!isWinningRow) {
-                if (["IW1","IW2"].includes(num)) {
+                if (Object.keys(gameData.instantWins).includes(num)) {
                     winFound = true;
-                    resultText.text = `Instant Win: ${num}!`;
+                    resultText.text = `Instant Win: ${num}! `;
                     card.tint = 0xffff00; // Highlights yellow.
-                    winThisTicket += ticketPrice * 10; // Example fixed prize (10x the ticket).
+                    winThisTicket += gameData.instantWins[num];
                 } else if (winningNumbers.includes(num)) {
                     winFound = true;
-                    resultText.text = `Matched ${num}!`;
+                    resultText.text = `Matched ${num}! `;
                     card.tint = 0xffff00;
-                    winThisTicket += ticketPrice * 5; // Example prize (5x the ticket).
+                    winThisTicket += ticketPrice * gameData.prizeMultipliers.match;
                 } else if (!winFound) {
                     resultText.text = "No match yet...";
                 }
@@ -222,7 +214,7 @@ import { Application, Text, Container, Graphics } from './node_modules/pixi.js/d
     function onResize() {
         const gapTitleToRow = 5; // Space under the titles.
         const gapGroups = 50; // Space between the winning and player groups.
-        const gapBottom = 40; // Space before the result text.
+        const gapBottom = 60; // Space before the result text.
 
         // Titles centred horizontally.
         winningTitle.x = 0;
@@ -249,6 +241,10 @@ import { Application, Text, Container, Graphics } from './node_modules/pixi.js/d
         currentY += playerContainer.height + gapBottom;
         resultText.y = currentY;
 
+        // Places 'Buy Ticket' below the resultText.
+        buyBtn.x = -buyBtn.width * 0.5; // Horizontal centring.
+        buyBtn.y = resultText.y + resultText.height + 20;
+
         // Calculates the true bounding box of everything inside the mainContainer.
         const bounds = mainContainer.getLocalBounds();
 
@@ -259,7 +255,10 @@ import { Application, Text, Container, Graphics } from './node_modules/pixi.js/d
         mainContainer.position.set(app.screen.width * 0.5, app.screen.height * 0.5);
     }
 
+    buyBtn.on("pointerdown", () => startNewTicket());
+
     window.addEventListener('resize', onResize);
+    updateHUD();
     onResize();
 
 })();

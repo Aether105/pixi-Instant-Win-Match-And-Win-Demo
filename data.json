@@ -1,0 +1,53 @@
+{
+  "ticketPrices": [100],
+  "instantWins": {
+    "IW1": 200,
+    "IW2": 500,
+    "IW3": 1000
+  },
+  "prizeMultipliers": {
+    "match": 1
+  },
+  "scenarios": [
+    {
+      "winningNumbers": [7, 14],
+      "playerNumbers": [3, 7, 12, 20, 25, 28]
+    },
+    {
+      "winningNumbers": [5, 9],
+      "playerNumbers": [1, 2, 3, 4, 6, 8]
+    },
+    {
+      "winningNumbers": [11, 22],
+      "playerNumbers": [10, "IW1", 30, 18, 25, 6]
+    },
+    {
+      "winningNumbers": [2, 19],
+      "playerNumbers": [19, 2, "IW2", 10, 15, 8]
+    },
+    {
+      "winningNumbers": [8, 16],
+      "playerNumbers": [1, "IW3", 12, 14, 17, 21]
+    },
+    {
+      "winningNumbers": [4, 29],
+      "playerNumbers": [7, 8, 12, 14, 17, 21]
+    },
+    {
+      "winningNumbers": [6, 12],
+      "playerNumbers": [6, 12, 1, 2, 3, "IW1"]
+    },
+    {
+      "winningNumbers": [20, 25],
+      "playerNumbers": [4, 5, 9, 10, 15, 18]
+    },
+    {
+      "winningNumbers": [13, 30],
+      "playerNumbers": [13, "IW2", 9, 22, 5, 7]
+    },
+    {
+      "winningNumbers": [9, 27],
+      "playerNumbers": [1, 4, 6, 8, 10, 15]
+    }
+  ]
+}
