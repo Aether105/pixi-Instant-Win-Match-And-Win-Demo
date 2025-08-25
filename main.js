@@ -37,6 +37,61 @@ async function loadGameData(){
     hudText.y = 1;
     app.stage.addChild(hudText);
 
+    // --- Ticket Price Selector ---
+    const selectorContainer = new Container();
+    app.stage.addChild(selectorContainer);
+
+    function createPriceButton(price, index){
+        const btn = new Graphics().roundRect(0, 0, 80, 40, 8).fill(0x444444);
+        btn.interactive = true;
+        btn.cursor = 'pointer';
+
+        const label = new Text(`£${(price / 100).toFixed(0)}`, {
+            fill: 0xffffff,
+            fontSize: 18,
+            fontWeight: 'bold'
+        });
+        label.anchor.set(0.5);
+        label.position.set(40, 20);
+        btn.addChild(label);
+
+        // Positions the buttons vertically.
+        btn.y = index * 50;
+
+        btn.on('pointerdown', () => {
+            if (balance >= price){
+                ticketPrice = price;
+                updateHUD();
+                highlightSelectedPrice(price);
+            }
+        });
+
+        selectorContainer.addChild(btn);
+        return { btn, label, price };
+    }
+
+    const priceButtons = gameData.ticketPrices.map((p, i) => createPriceButton(p, i));
+
+    function highlightSelectedPrice(selected){
+        priceButtons.forEach(({ btn, price }) => {
+            btn.tint = (price === selected) ? 0x07f03a : 0xffffff;
+        });
+    }
+
+    function updatePriceButtons(){
+        priceButtons.forEach(({ btn, price }) => {
+            if (balance < price){
+                btn.alpha = 0.4;
+                btn.interactive = false;
+            } else {
+                btn.alpha = 1;
+                btn.interactive = true;
+            }
+        });
+    }
+
+    highlightSelectedPrice(ticketPrice);
+
     // Winning Numbers title.
     const winningTitle = new Text("Winning Numbers", {
         fill: 0xffffff,
@@ -95,9 +150,10 @@ async function loadGameData(){
     let playerNumbers = [];
     let winFound = false;
 
-    // --- Functions ---
+
     function updateHUD() {
         hudText.text = `Balance: £${(balance/100).toFixed(2)} | Ticket: £${(ticketPrice/100).toFixed(2)}`;
+        updatePriceButtons();
     }
 
     function startNewTicket() {
@@ -189,7 +245,7 @@ async function loadGameData(){
                     winFound = true;
                     resultText.text = `Instant Win: ${num}! `;
                     card.tint = 0xffff00; // Highlights yellow.
-                    winThisTicket += gameData.instantWins[num];
+                    winThisTicket += gameData.instantWins[num][ticketPrice];
                 } else if (winningNumbers.includes(num)) {
                     winFound = true;
                     resultText.text = `Matched ${num}! `;
@@ -215,6 +271,14 @@ async function loadGameData(){
         const gapTitleToRow = 5; // Space under the titles.
         const gapGroups = 50; // Space between the winning and player groups.
         const gapBottom = 60; // Space before the result text.
+        const padding = 20;
+
+        // Positions the HUD at the top centre.
+        hudText.x = app.screen.width * 0.5;
+
+        // Positions the selector at the bottom right.
+        selectorContainer.x = app.screen.width - selectorContainer.width - padding;
+        selectorContainer.y = app.screen.height - selectorContainer.height - padding;
 
         // Titles centred horizontally.
         winningTitle.x = 0;
