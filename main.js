@@ -1,4 +1,4 @@
-import { Application, Text, Container, Graphics } from './node_modules/pixi.js/dist/pixi.mjs';
+import { Application, Text, Container, Graphics } from 'https://cdn.jsdelivr.net/npm/pixi.js@8.x/dist/pixi.mjs';
 
 // --- Loads external data ---
 let gameData;
