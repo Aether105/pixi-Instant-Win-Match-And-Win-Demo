@@ -2,7 +2,7 @@ import { Application, Text, Container, Graphics } from 'https://cdn.jsdelivr.net
 
 // --- Loads external data ---
 let gameData;
-async function loadGameData(){
+async function loadGameData() {
     const res = await fetch("./data.json");
     gameData = await res.json();
 }
@@ -26,7 +26,7 @@ async function loadGameData(){
     const mainContainer = new Container();
     app.stage.addChild(mainContainer);
 
-    
+
     const hudText = new Text("", {
         fill: 0xffffff,
         fontSize: 20,
@@ -41,7 +41,7 @@ async function loadGameData(){
     const selectorContainer = new Container();
     app.stage.addChild(selectorContainer);
 
-    function createPriceButton(price, index){
+    function createPriceButton(price, index) {
         const btn = new Graphics().roundRect(0, 0, 80, 40, 8).fill(0x444444);
         btn.interactive = true;
         btn.cursor = 'pointer';
@@ -59,7 +59,7 @@ async function loadGameData(){
         btn.y = index * 50;
 
         btn.on('pointerdown', () => {
-            if (balance >= price){
+            if (balance >= price) {
                 ticketPrice = price;
                 updateHUD();
                 highlightSelectedPrice(price);
@@ -72,15 +72,15 @@ async function loadGameData(){
 
     const priceButtons = gameData.ticketPrices.map((p, i) => createPriceButton(p, i));
 
-    function highlightSelectedPrice(selected){
+    function highlightSelectedPrice(selected) {
         priceButtons.forEach(({ btn, price }) => {
             btn.tint = (price === selected) ? 0x07f03a : 0xffffff;
         });
     }
 
-    function updatePriceButtons(){
+    function updatePriceButtons() {
         priceButtons.forEach(({ btn, price }) => {
-            if (balance < price){
+            if (balance < price) {
                 btn.alpha = 0.4;
                 btn.interactive = false;
             } else {
@@ -126,7 +126,7 @@ async function loadGameData(){
     // Container for player cards.
     const playerContainer = new Container();
     mainContainer.addChild(playerContainer);
-    
+
 
     // --- Buy Ticket Button ---
     const buyBtn = new Graphics().roundRect(0, 0, 140, 50, 12).fill(0x0066ff);
@@ -141,7 +141,7 @@ async function loadGameData(){
     buyLabel.anchor.set(0.5);
     buyLabel.position.set(70, 25);
     buyBtn.addChild(buyLabel);
-    
+
 
     mainContainer.addChild(buyBtn);
 
@@ -152,12 +152,32 @@ async function loadGameData(){
 
 
     function updateHUD() {
-        hudText.text = `Balance: £${(balance/100).toFixed(2)} | Ticket: £${(ticketPrice/100).toFixed(2)}`;
+        hudText.text = `Balance: £${(balance / 100).toFixed(2)} | Ticket: £${(ticketPrice / 100).toFixed(2)}`;
         updatePriceButtons();
     }
 
+    // Parses the scenario strings.
+    function parseScenario(scenarioStr) {
+        const parts = scenarioStr.split(";");
+
+        // Extracts the winning numbers (after "W:").
+        const winningNumbers = parts[0]
+            .replace("W:", "")
+            .split(",")
+            .map(v => isNaN(v) ? v : Number(v));
+
+        // Extracts the player numbers (after "P:").
+        const playerNumbers = parts[1]
+            .replace("P:", "")
+            .split(",")
+            .map(v => isNaN(v) ? v : Number(v));
+
+        return { winningNumbers, playerNumbers };
+    }
+
+
     function startNewTicket() {
-        if (balance < ticketPrice){
+        if (balance < ticketPrice) {
             resultText.text = "Insufficient funds!";
             return;
         }
@@ -170,9 +190,12 @@ async function loadGameData(){
         winThisTicket = 0;
 
         // Picks a random scenario from the JSON.
-        const scenario = gameData.scenarios[
+        const scenarioStr = gameData.scenarios[
             Math.floor(Math.random() * gameData.scenarios.length)
         ];
+
+        // Parses it into structured data.
+        const scenario = parseScenario(scenarioStr);
 
         winningNumbers = scenario.winningNumbers.slice();
         playerNumbers = scenario.playerNumbers.slice();
@@ -193,7 +216,7 @@ async function loadGameData(){
     function endTicket() {
         if (winThisTicket > 0) {
             balance += winThisTicket; // Add winnings.
-            resultText.text += `You Won: £${(winThisTicket/100).toFixed(2)}!`;
+            resultText.text += `You Won: £${(winThisTicket / 100).toFixed(2)}!`;
         } else {
             resultText.text = "You Lost! Better luck next time!";
         }
