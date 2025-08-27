@@ -1,4 +1,4 @@
-import { Application, Text, Container, Graphics } from 'https://cdn.jsdelivr.net/npm/pixi.js@8.x/dist/pixi.mjs';
+import { Application, Text, Container, Sprite, Assets, Graphics } from 'https://cdn.jsdelivr.net/npm/pixi.js@8.x/dist/pixi.mjs';
 
 // --- Loads external data ---
 let gameData;
@@ -10,12 +10,24 @@ async function loadGameData() {
 (async () => {
     await loadGameData();
 
+    // --- Initialises PIXI and Manifest ---
+    await Assets.init({ manifest: "./manifest.json" });
+
+    // Loads all the textures from the "main" bundle.
+    const textures = await Assets.loadBundle("main");
+
     const app = new Application();
     await app.init({
         resizeTo: window,
         background: 0x1099bb
     });
     document.body.appendChild(app.canvas);
+
+    // --- Background ---
+    const bg = Sprite.from(textures.background);
+    bg.width = app.screen.width;
+    bg.height = app.screen.height;
+    app.stage.addChild(bg);
 
     // --- Balance and ticket price setup ---
     let balance = 2000; // Starting balance in pence.
@@ -28,7 +40,7 @@ async function loadGameData() {
 
 
     const hudText = new Text("", {
-        fill: 0xffffff,
+        fill: 0xffff00,
         fontSize: 20,
         fontWeight: 'bold'
     });
@@ -94,7 +106,7 @@ async function loadGameData() {
 
     // Winning Numbers title.
     const winningTitle = new Text("Winning Numbers", {
-        fill: 0xffffff,
+        fill: 0xffff00,
         fontSize: 32,
         fontWeight: 'bold'
     });
@@ -103,7 +115,7 @@ async function loadGameData() {
 
     // Player Numbers title.
     const playerTitle = new Text("Player Numbers", {
-        fill: 0xffffff,
+        fill: 0xffff00,
         fontSize: 32,
         fontWeight: 'bold'
     });
@@ -112,7 +124,7 @@ async function loadGameData() {
 
     // Instruction / result text.
     const resultText = new Text("Click a card to reveal a number", {
-        fill: 0xffffff,
+        fill: 0xffff00,
         fontSize: 24,
         fontWeight: 'bold'
     });
@@ -149,6 +161,8 @@ async function loadGameData() {
     let winningNumbers = [];
     let playerNumbers = [];
     let winFound = false;
+    let allWinningRevealed = false;
+    let ticketInProgress = false;
 
 
     function updateHUD() {
@@ -175,8 +189,21 @@ async function loadGameData() {
         return { winningNumbers, playerNumbers };
     }
 
+    // Enables and disables the player numbers.
+    function setPlayerCardsEnabled(enabled){
+        playerContainer.children.forEach(card => {
+            card.interactive = enabled;
+            card.cursor = enabled ? 'pointer' : 'not-allowed';
+            card.alpha = enabled ? 1 : 0.5;
+        });
+    }
+
 
     function startNewTicket() {
+        if (ticketInProgress){
+            resultText.text = "Finish your current ticket first! ";
+            return;
+        }
         if (balance < ticketPrice) {
             resultText.text = "Insufficient funds!";
             return;
@@ -188,6 +215,8 @@ async function loadGameData() {
 
         winFound = false;
         winThisTicket = 0;
+        allWinningRevealed = false;
+        ticketInProgress = true;
 
         // Picks a random scenario from the JSON.
         const scenarioStr = gameData.scenarios[
@@ -209,7 +238,9 @@ async function loadGameData() {
         setupCards(winningContainer, winningNumbers, true);
         setupCards(playerContainer, playerNumbers, false);
 
-        resultText.text = "Click a card to reveal a number";
+        setPlayerCardsEnabled(false); // Locks the cards at the start.
+
+        resultText.text = "Click a winning number to reveal!";
         onResize();
     }
 
@@ -221,6 +252,8 @@ async function loadGameData() {
             resultText.text = "You Lost! Better luck next time!";
         }
         updateHUD();
+
+        ticketInProgress = false; // Allows for a new ticket to be bought.
     }
 
     // Creates a row of cards.
@@ -240,6 +273,8 @@ async function loadGameData() {
         const card = new Graphics().rect(0, 0, 100, 100).fill(0xffffff);
         card.interactive = true;
         card.cursor = 'pointer';
+
+        card.number = num; // Stores the number for later lookup.
 
         const q = new Text("?", {
             fill: 0x000000,
@@ -262,18 +297,32 @@ async function loadGameData() {
             numberText.position.set(50, 50);
             card.addChild(numberText);
 
-            // Only checks for wins on player cards.
-            if (!isWinningRow) {
+            
+            if (isWinningRow) {
+                const allRevealed = winningContainer.children.every(c => c.revealed);
+                if (allRevealed){
+                    allWinningRevealed = true;
+                    resultText.text = "Now reveal your numbers!";
+                    setPlayerCardsEnabled(true); // Unlocks the cards.
+                }
+            } else {
                 if (Object.keys(gameData.instantWins).includes(num)) {
                     winFound = true;
                     resultText.text = `Instant Win: ${num}! `;
-                    card.tint = 0xffff00; // Highlights yellow.
+                    card.tint = 0x02a7fa;
                     winThisTicket += gameData.instantWins[num][ticketPrice];
                 } else if (winningNumbers.includes(num)) {
                     winFound = true;
                     resultText.text = `Matched ${num}! `;
-                    card.tint = 0xffff00;
+                    card.tint = 0xffff00; // Highlights yellow.
                     winThisTicket += ticketPrice * gameData.prizeMultipliers.match;
+
+                    // Highlights the matching winning card(s) as well.
+                    winningContainer.children.forEach(winningCard => {
+                        if (winningCard.number === num){
+                            winningCard.tint = 0xffff00;
+                        }
+                    });
                 } else if (!winFound) {
                     resultText.text = "No match yet...";
                 }

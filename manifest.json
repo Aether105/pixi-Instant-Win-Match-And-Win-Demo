@@ -1,0 +1,10 @@
+{
+  "bundles": [
+    {
+      "name": "main",
+      "assets": [
+        { "alias": "background", "src": "./assets/background.png" }
+      ]
+    }
+  ]
+}
