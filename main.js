@@ -104,8 +104,8 @@ async function loadGameData() {
 
     highlightSelectedPrice(ticketPrice);
 
-    // Winning Numbers title.
-    const winningTitle = new Text("Winning Numbers", {
+    // Winning Coins title.
+    const winningTitle = new Text("Winning Coins", {
         fill: 0xffff00,
         fontSize: 32,
         fontWeight: 'bold'
@@ -113,8 +113,8 @@ async function loadGameData() {
     winningTitle.anchor.set(0.5);
     mainContainer.addChild(winningTitle);
 
-    // Player Numbers title.
-    const playerTitle = new Text("Player Numbers", {
+    // Player Coins title.
+    const playerTitle = new Text("Player Coins", {
         fill: 0xffff00,
         fontSize: 32,
         fontWeight: 'bold'
