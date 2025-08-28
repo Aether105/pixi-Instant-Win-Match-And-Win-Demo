@@ -3,7 +3,15 @@
     {
       "name": "main",
       "assets": [
-        { "alias": "background", "src": "./assets/background.png" }
+        { "alias": "background", "src": "./assets/background.png" },
+        { "alias": "treasure_chest", "src": "./assets/treasure_chest.png" },
+        { "alias": "treasure_chest_revealed", "src": "./assets/treasure_chest_revealed.png" },
+        { "alias": "treasure_chest_revealed_GREEN", "src": "./assets/treasure_chest_revealed_GREEN.png" },
+        { "alias": "pirate_ship", "src": "./assets/pirate_ship.png" },
+        { "alias": "pirate_ship_revealed", "src": "./assets/pirate_ship_revealed.png" },
+        { "alias": "pirate_ship_revealed_red", "src": "./assets/pirate_ship_revealed_RED.png" },
+        { "alias": "barrel_of_coins_revealed", "src": "./assets/barrel_of_coins_revealed.png" },
+        { "alias": "play_button", "src": "./assets/play_button.png" }
       ]
     }
   ]

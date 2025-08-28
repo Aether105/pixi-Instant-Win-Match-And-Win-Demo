@@ -1,4 +1,5 @@
 import { Application, Text, Container, Sprite, Assets, Graphics } from 'https://cdn.jsdelivr.net/npm/pixi.js@8.x/dist/pixi.mjs';
+import gsap from "https://cdn.jsdelivr.net/npm/gsap@3.12.5/index.js";
 
 // --- Loads external data ---
 let gameData;
@@ -37,7 +38,6 @@ async function loadGameData() {
     // The container for the main game (everything goes inside of this).
     const mainContainer = new Container();
     app.stage.addChild(mainContainer);
-
 
     const hudText = new Text("", {
         fill: 0xffff00,
@@ -123,7 +123,7 @@ async function loadGameData() {
     mainContainer.addChild(playerTitle);
 
     // Instruction / result text.
-    const resultText = new Text("Click a card to reveal a number", {
+    const resultText = new Text("Click a coin to reveal a number", {
         fill: 0xffff00,
         fontSize: 24,
         fontWeight: 'bold'
@@ -131,31 +131,22 @@ async function loadGameData() {
     resultText.anchor.set(0.5);
     mainContainer.addChild(resultText);
 
-    // Container for winning number cards.
+    // Container for winning number coins.
     const winningContainer = new Container();
     mainContainer.addChild(winningContainer);
 
-    // Container for player cards.
+    // Container for winning number coins.
     const playerContainer = new Container();
     mainContainer.addChild(playerContainer);
 
-
-    // --- Buy Ticket Button ---
-    const buyBtn = new Graphics().roundRect(0, 0, 140, 50, 12).fill(0x0066ff);
-    buyBtn.interactive = true;
-    buyBtn.cursor = 'pointer';
-
-    const buyLabel = new Text("Buy Ticket", {
-        fill: 0xffffff,
-        fontSize: 23,
-        fontWeight: 'bold'
-    });
-    buyLabel.anchor.set(0.5);
-    buyLabel.position.set(70, 25);
-    buyBtn.addChild(buyLabel);
-
-
-    mainContainer.addChild(buyBtn);
+    // --- Play Button ---
+    const playBtn = new Sprite(textures.play_button);
+    playBtn.width = 200;
+    playBtn.height = 110;
+    playBtn.anchor.set(0.5);
+    playBtn.interactive = true;
+    playBtn.cursor = 'pointer';
+    app.stage.addChild(playBtn);
 
     // --- Game data (initialised per ticket) ---
     let winningNumbers = [];
@@ -163,7 +154,6 @@ async function loadGameData() {
     let winFound = false;
     let allWinningRevealed = false;
     let ticketInProgress = false;
-
 
     function updateHUD() {
         hudText.text = `Balance: £${(balance / 100).toFixed(2)} | Ticket: £${(ticketPrice / 100).toFixed(2)}`;
@@ -190,17 +180,16 @@ async function loadGameData() {
     }
 
     // Enables and disables the player numbers.
-    function setPlayerCardsEnabled(enabled){
-        playerContainer.children.forEach(card => {
-            card.interactive = enabled;
-            card.cursor = enabled ? 'pointer' : 'not-allowed';
-            card.alpha = enabled ? 1 : 0.5;
+    function setPlayerCoinsEnabled(enabled){
+        playerContainer.children.forEach(coin => {
+            coin.interactive = enabled;
+            coin.cursor = enabled ? 'pointer' : 'not-allowed';
+            coin.alpha = enabled ? 1 : 0.5;
         });
     }
 
-
     function startNewTicket() {
-        if (ticketInProgress){
+        if (ticketInProgress) {
             resultText.text = "Finish your current ticket first! ";
             return;
         }
@@ -209,7 +198,7 @@ async function loadGameData() {
             return;
         }
 
-        /// Deducts ticket cost.
+        // Deducts ticket cost.
         balance -= ticketPrice;
         updateHUD();
 
@@ -229,16 +218,15 @@ async function loadGameData() {
         winningNumbers = scenario.winningNumbers.slice();
         playerNumbers = scenario.playerNumbers.slice();
 
-        // Clears the old cards.
+        // Clears the old coins.
         winningContainer.removeChildren();
         playerContainer.removeChildren();
 
+        // Creates the winning and player coins.
+        setupCoins(winningContainer, winningNumbers, true);
+        setupCoins(playerContainer, playerNumbers, false);
 
-        // Creates the winning and player cards.
-        setupCards(winningContainer, winningNumbers, true);
-        setupCards(playerContainer, playerNumbers, false);
-
-        setPlayerCardsEnabled(false); // Locks the cards at the start.
+        setPlayerCoinsEnabled(false) // Unlocks the coins.; // Locks the coins at the start.
 
         resultText.text = "Click a winning number to reveal!";
         onResize();
@@ -246,7 +234,7 @@ async function loadGameData() {
 
     function endTicket() {
         if (winThisTicket > 0) {
-            balance += winThisTicket; // Add winnings.
+            balance += winThisTicket; // Adds winnings.
             resultText.text += `You Won: £${(winThisTicket / 100).toFixed(2)}!`;
         } else {
             resultText.text = "You Lost! Better luck next time!";
@@ -256,86 +244,102 @@ async function loadGameData() {
         ticketInProgress = false; // Allows for a new ticket to be bought.
     }
 
-    // Creates a row of cards.
-    function setupCards(container, numbers, isWinningRow) {
-        // Creates card graphics for each number.
+    // Creates a row of coins.
+    function setupCoins(container, numbers, isWinningRow) {
+        // Creates coin graphics for each number.
         numbers.forEach((num, index) => {
-            const card = createCard(num, isWinningRow);
+            const coin = createCoin(num, isWinningRow);
             // Arranges them in a grid: 3 per row.
-            card.x = (index % 3) * 150;
-            card.y = Math.floor(index / 3) * 150;
-            container.addChild(card);
+            coin.x = (index % 3) * 150;
+            coin.y = Math.floor(index / 3) * 150;
+            container.addChild(coin);
         });
     }
 
-    // Creates a single card (white square).
-    function createCard(num, isWinningRow) {
-        const card = new Graphics().rect(0, 0, 100, 100).fill(0xffffff);
-        card.interactive = true;
-        card.cursor = 'pointer';
+    // Creates a single coin.
+    function createCoin(num, isWinningRow) {
+        const coin = new Container();
+        coin.number = num; // Stores the number for later lookup.
 
-        card.number = num; // Stores the number for later lookup.
+        const front = new Sprite(isWinningRow ? Assets.get("treasure_chest") : Assets.get("pirate_ship"));
+        front.width = 100;
+        front.height = 100;
+        front.anchor.set(0.5);
+        front.x = 50;
+        front.y = 50;
+        front.name = "front";
 
-        const q = new Text("?", {
-            fill: 0x000000,
-            fontSize: 48
-        });
-        q.anchor.set(0.5);
-        q.position.set(50, 50);
-        card.addChild(q);
+        const back = new Sprite();
+        back.width = 100;
+        back.height = 100;
+        back.anchor.set(0.5);
+        back.x = 50;
+        back.y = 50;
+        back.visible = false;
+        back.name = "back";
 
-        card.on('pointerdown', () => {
-            if (card.revealed) return; // Ignores if card has already been flipped.
-            card.revealed = true;
-            q.visible = false;
+        coin.addChild(front, back);
+        coin.interactive = true;
+        coin.cursor = 'pointer';
 
-            const numberText = new Text(num.toString(), {
-                fill: 0x000000,
-                fontSize: 36
-            });
-            numberText.anchor.set(0.5);
-            numberText.position.set(50, 50);
-            card.addChild(numberText);
+        coin.on('pointerdown', () => {
+            if (coin.revealed) return; // Ignores, if the coin has already been flipped.
+            coin.revealed = true;
 
-            
-            if (isWinningRow) {
-                const allRevealed = winningContainer.children.every(c => c.revealed);
-                if (allRevealed){
-                    allWinningRevealed = true;
-                    resultText.text = "Now reveal your numbers!";
-                    setPlayerCardsEnabled(true); // Unlocks the cards.
-                }
-            } else {
-                if (Object.keys(gameData.instantWins).includes(num)) {
-                    winFound = true;
-                    resultText.text = `Instant Win: ${num}! `;
-                    card.tint = 0x02a7fa;
-                    winThisTicket += gameData.instantWins[num][ticketPrice];
-                } else if (winningNumbers.includes(num)) {
-                    winFound = true;
-                    resultText.text = `Matched ${num}! `;
-                    card.tint = 0xffff00; // Highlights yellow.
-                    winThisTicket += ticketPrice * gameData.prizeMultipliers.match;
+            gsap.to(coin.scale, {
+                x: 0,
+                duration: 0.3,
+                onComplete: () => {
+                    if (isWinningRow) {
+                        back.texture = Assets.get("treasure_chest_revealed");
+                    } else {
+                        if (Object.keys(gameData.instantWins).includes(num.toString())) {
+                            back.texture = Assets.get("barrel_of_coins_revealed");
+                            winThisTicket += gameData.instantWins[num][ticketPrice];
+                            winFound = true;
+                            resultText.text = `Instant Win: ${num}! `;
+                        } else if (winningNumbers.includes(num)) {
+                            back.texture = Assets.get("pirate_ship_revealed");
+                            winThisTicket += ticketPrice * gameData.prizeMultipliers.match;
+                            winFound = true;
+                            resultText.text = `Matched ${num}! `;
 
-                    // Highlights the matching winning card(s) as well.
-                    winningContainer.children.forEach(winningCard => {
-                        if (winningCard.number === num){
-                            winningCard.tint = 0xffff00;
+                            // Flip the matching winning chest green
+                            winningContainer.children.forEach(wc => {
+                                if (wc.number === num && wc.revealed) {
+                                    // FIXED: Corrected asset name to match expected capitalization
+                                    wc.getChildByName("back").texture = Assets.get("treasure_chest_revealed_GREEN");
+                                }
+                            });
+                        } else {
+                            back.texture = Assets.get("pirate_ship_revealed_red");
+                            if (!winFound) resultText.text = "No match yet...";
                         }
-                    });
-                } else if (!winFound) {
-                    resultText.text = "No match yet...";
-                }
+                    }
 
-                // --- End the ticket when all cards have been revealed ---
-                const allRevealed = playerContainer.children.every(c => c.revealed);
-                if (allRevealed) {
-                    endTicket();
+                    front.visible = false;
+                    back.visible = true;
+                    gsap.to(coin.scale, { x: 1, duration: 0.3 });
+
+                    if (isWinningRow) {
+                        const allRevealed = winningContainer.children.every(c => c.revealed);
+                        if (allRevealed) {
+                            allWinningRevealed = true;
+                            resultText.text = "Now reveal your coins!";
+                            setPlayerCoinsEnabled(true); // Unlocks the coins.
+                        }
+                    } else {
+                        // --- Ends the ticket when all the cards have been revealed ---
+                        const allRevealed = playerContainer.children.every(c => c.revealed);
+                        if (allRevealed){
+                            endTicket();
+                        }
+                    }
                 }
-            }
+            });
         });
 
-        return card;
+        return coin;
     }
 
     // --- Handles the layout and centring ---
@@ -351,6 +355,10 @@ async function loadGameData() {
         // Positions the selector at the bottom right.
         selectorContainer.x = app.screen.width - selectorContainer.width - padding;
         selectorContainer.y = app.screen.height - selectorContainer.height - padding;
+
+        // Positions the play button (right-centre above the selector).
+        playBtn.x = app.screen.width - selectorContainer.width - padding - 30;
+        playBtn.y = app.screen.height * 0.5;
 
         // Titles centred horizontally.
         winningTitle.x = 0;
@@ -377,10 +385,6 @@ async function loadGameData() {
         currentY += playerContainer.height + gapBottom;
         resultText.y = currentY;
 
-        // Places 'Buy Ticket' below the resultText.
-        buyBtn.x = -buyBtn.width * 0.5; // Horizontal centring.
-        buyBtn.y = resultText.y + resultText.height + 20;
-
         // Calculates the true bounding box of everything inside the mainContainer.
         const bounds = mainContainer.getLocalBounds();
 
@@ -391,7 +395,7 @@ async function loadGameData() {
         mainContainer.position.set(app.screen.width * 0.5, app.screen.height * 0.5);
     }
 
-    buyBtn.on("pointerdown", () => startNewTicket());
+    playBtn.on("pointerdown", () => startNewTicket());
 
     window.addEventListener('resize', onResize);
     updateHUD();
