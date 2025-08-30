@@ -11,7 +11,10 @@
         { "alias": "pirate_ship_revealed", "src": "./assets/pirate_ship_revealed.png" },
         { "alias": "pirate_ship_revealed_red", "src": "./assets/pirate_ship_revealed_RED.png" },
         { "alias": "barrel_of_coins_revealed", "src": "./assets/barrel_of_coins_revealed.png" },
-        { "alias": "play_button", "src": "./assets/play_button.png" }
+        { "alias": "play_button", "src": "./assets/play_button.png" },
+        { "alias": "info_meter", "src": "./assets/info_meter.png" },
+        { "alias": "plus", "src": "./assets/plus.png" }, 
+        { "alias": "minus", "src": "./assets/minus.png" }
       ]
     }
   ]

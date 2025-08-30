@@ -1,4 +1,4 @@
-import { Application, Text, Container, Sprite, Assets, Graphics } from 'https://cdn.jsdelivr.net/npm/pixi.js@8.x/dist/pixi.mjs';
+import { Application, Text, Container, Sprite, Assets, Graphics, Rectangle, Polygon } from 'https://cdn.jsdelivr.net/npm/pixi.js@8.x/dist/pixi.mjs';
 import gsap from "https://cdn.jsdelivr.net/npm/gsap@3.12.5/index.js";
 
 // --- Loads external data ---
@@ -148,6 +148,70 @@ async function loadGameData() {
     playBtn.cursor = 'pointer';
     app.stage.addChild(playBtn);
 
+    // --- Info-Meter ---
+    const infoMtr = new Sprite(textures.info_meter);
+    infoMtr.width = 700;
+    infoMtr.height = 450;
+    infoMtr.anchor.set(0.5);
+    app.stage.addChild(infoMtr);
+
+    // Info Minus button.
+    const infoMinus = new Sprite(textures.minus);
+    infoMinus.width = 110;
+    infoMinus.height = 120;
+    infoMinus.anchor.set(0.5);
+    infoMinus.eventMode = 'static'; // The v8 way to receive events in replacement for interactive = true.
+    infoMinus.cursor = 'pointer';
+    
+    infoMtr.addChild(infoMinus);
+
+    // Relative coordinates inside the meter.
+    infoMinus.x = infoMtr.width * -0.78;
+    infoMinus.y = infoMtr.height * 0.185;
+
+    // Uses the local texture size for the hitArea rather than the 110x120.
+    const { width: tw, height: th } = infoMinus.texture;
+
+    // The polygon points are expressed as fractions of the texture size, so it works regardless of the size the sprite is drawn at.
+    infoMinus.hitArea = new Polygon([
+        -tw * 0.5, 0,
+        -0.30 * tw, -0.40 * th,
+        tw * 0.5, -th * 0.5,
+        tw * 0.5, th * 0.5,
+        -0.30 * tw, 0.40 * th
+    ]);
+
+    infoMinus.on('pointerdown', () => {
+        console.log('Hello');
+    });
+
+    // Info Plus button.
+    const infoPlus = new Sprite(textures.plus);
+    infoPlus.width = 110;
+    infoPlus.height = 120;
+    infoPlus.anchor.set(0.5);
+    infoPlus.eventMode = 'static';
+    infoPlus.cursor = 'pointer';
+    
+    infoMtr.addChild(infoPlus);
+
+    infoPlus.x = infoMtr.width * -0.4;
+    infoPlus.y = infoMtr.height * 0.185;
+
+    const { width: tw2, height: th2 } = infoPlus.texture;
+
+    infoPlus.hitArea = new Polygon([
+        -tw2 * 0.5, 0,
+        -0.30 * tw2, -0.40 * th2,
+        tw2 * 0.5, -th2 * 0.5,
+        tw2 * 0.5, th2 * 0.5,
+        -0.30 * tw2, 0.40 * th2
+    ]);
+
+    infoPlus.on('pointerdown', () => {
+        console.log('Hi');
+    });
+
     // --- Game data (initialised per ticket) ---
     let winningNumbers = [];
     let playerNumbers = [];
@@ -180,7 +244,7 @@ async function loadGameData() {
     }
 
     // Enables and disables the player numbers.
-    function setPlayerCoinsEnabled(enabled){
+    function setPlayerCoinsEnabled(enabled) {
         playerContainer.children.forEach(coin => {
             coin.interactive = enabled;
             coin.cursor = enabled ? 'pointer' : 'not-allowed';
@@ -299,7 +363,7 @@ async function loadGameData() {
                             winFound = true;
                             resultText.text = `Instant Win: ${num}! `;
                         } else if (winningNumbers.includes(num)) {
-                            back.texture = Assets.get("pirate_ship_revealed");
+                            back.texture = Assets.get("treasure_chest_revealed_GREEN");
                             winThisTicket += ticketPrice * gameData.prizeMultipliers.match;
                             winFound = true;
                             resultText.text = `Matched ${num}! `;
@@ -331,7 +395,7 @@ async function loadGameData() {
                     } else {
                         // --- Ends the ticket when all the cards have been revealed ---
                         const allRevealed = playerContainer.children.every(c => c.revealed);
-                        if (allRevealed){
+                        if (allRevealed) {
                             endTicket();
                         }
                     }
@@ -393,6 +457,10 @@ async function loadGameData() {
 
         // Places that pivot at the centre of the screen.
         mainContainer.position.set(app.screen.width * 0.5, app.screen.height * 0.5);
+
+        // Positions the info meter at the bottom centre.
+        infoMtr.x = app.screen.width * 0.5;
+        infoMtr.y = app.screen.height - infoMtr.height * 0.5 + 140; // 140px margin.
     }
 
     playBtn.on("pointerdown", () => startNewTicket());
