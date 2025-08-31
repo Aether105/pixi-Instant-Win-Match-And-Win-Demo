@@ -1,4 +1,4 @@
-import { Application, Text, Container, Sprite, Assets, Graphics, Rectangle, Polygon } from 'https://cdn.jsdelivr.net/npm/pixi.js@8.x/dist/pixi.mjs';
+import { Application, Text, Container, Sprite, Assets, Graphics, Polygon } from 'https://cdn.jsdelivr.net/npm/pixi.js@8.x/dist/pixi.mjs';
 import gsap from "https://cdn.jsdelivr.net/npm/gsap@3.12.5/index.js";
 
 // --- Loads external data ---
@@ -39,115 +39,6 @@ async function loadGameData() {
     const mainContainer = new Container();
     app.stage.addChild(mainContainer);
 
-    const hudText = new Text("", {
-        fill: 0xffff00,
-        fontSize: 20,
-        fontWeight: 'bold'
-    });
-    hudText.anchor.set(0.5, 0);
-    hudText.x = app.screen.width * 0.5;
-    hudText.y = 1;
-    app.stage.addChild(hudText);
-
-    // --- Ticket Price Selector ---
-    const selectorContainer = new Container();
-    app.stage.addChild(selectorContainer);
-
-    function createPriceButton(price, index) {
-        const btn = new Graphics().roundRect(0, 0, 80, 40, 8).fill(0x444444);
-        btn.interactive = true;
-        btn.cursor = 'pointer';
-
-        const label = new Text(`£${(price / 100).toFixed(0)}`, {
-            fill: 0xffffff,
-            fontSize: 18,
-            fontWeight: 'bold'
-        });
-        label.anchor.set(0.5);
-        label.position.set(40, 20);
-        btn.addChild(label);
-
-        // Positions the buttons vertically.
-        btn.y = index * 50;
-
-        btn.on('pointerdown', () => {
-            if (balance >= price) {
-                ticketPrice = price;
-                updateHUD();
-                highlightSelectedPrice(price);
-            }
-        });
-
-        selectorContainer.addChild(btn);
-        return { btn, label, price };
-    }
-
-    const priceButtons = gameData.ticketPrices.map((p, i) => createPriceButton(p, i));
-
-    function highlightSelectedPrice(selected) {
-        priceButtons.forEach(({ btn, price }) => {
-            btn.tint = (price === selected) ? 0x07f03a : 0xffffff;
-        });
-    }
-
-    function updatePriceButtons() {
-        priceButtons.forEach(({ btn, price }) => {
-            if (balance < price) {
-                btn.alpha = 0.4;
-                btn.interactive = false;
-            } else {
-                btn.alpha = 1;
-                btn.interactive = true;
-            }
-        });
-    }
-
-    highlightSelectedPrice(ticketPrice);
-
-    // Winning Coins title.
-    const winningTitle = new Text("Winning Coins", {
-        fill: 0xffff00,
-        fontSize: 32,
-        fontWeight: 'bold'
-    });
-    winningTitle.anchor.set(0.5);
-    mainContainer.addChild(winningTitle);
-
-    // Player Coins title.
-    const playerTitle = new Text("Player Coins", {
-        fill: 0xffff00,
-        fontSize: 32,
-        fontWeight: 'bold'
-    });
-    playerTitle.anchor.set(0.5);
-    mainContainer.addChild(playerTitle);
-
-    // Instruction / result text.
-    const resultText = new Text("Click a coin to reveal a number", {
-        fill: 0xffff00,
-        fontSize: 24,
-        fontWeight: 'bold'
-    });
-    resultText.anchor.set(0.5);
-    mainContainer.addChild(resultText);
-
-    // Container for winning number coins.
-    const winningContainer = new Container();
-    mainContainer.addChild(winningContainer);
-
-    // Container for winning number coins.
-    const playerContainer = new Container();
-    mainContainer.addChild(playerContainer);
-
-    // --- Play Button ---
-    const playBtn = new Sprite(textures.play_button);
-    playBtn.width = 200;
-    playBtn.height = 110;
-    playBtn.anchor.set(0.5);
-    playBtn.interactive = true;
-    playBtn.cursor = 'pointer';
-    app.stage.addChild(playBtn);
-
     // --- Info-Meter ---
     const infoMtr = new Sprite(textures.info_meter);
     infoMtr.width = 700;
@@ -181,10 +72,6 @@ async function loadGameData() {
         -0.30 * tw, 0.40 * th
     ]);
 
-    infoMinus.on('pointerdown', () => {
-        console.log('Hello');
-    });
-
     // Info Plus button.
     const infoPlus = new Sprite(textures.plus);
     infoPlus.width = 110;
@@ -208,9 +95,145 @@ async function loadGameData() {
         -0.30 * tw2, 0.40 * th2
     ]);
 
-    infoPlus.on('pointerdown', () => {
-        console.log('Hi');
+    // Ticket price text (between the minus and plus buttons).
+    const priceText = new Text("", {
+        fill: 0xffff00,
+        fontSize: 42,
+        fontWeight: 'bold'
     });
+    priceText.anchor.set(0.5);
+    infoMtr.addChild(priceText);
+    priceText.x = (infoMinus.x + infoPlus.x) * 0.5;
+    priceText.y = infoMinus.y;
+
+    // Balance text.
+    const balanceText = new Text("", {
+        fill: 0xffff00,
+        fontSize: 42,
+        fontWeight: 'bold'
+    });
+    balanceText.anchor.set(0.5);
+    infoMtr.addChild(balanceText);
+    balanceText.x = priceText.x + 410;
+    balanceText.y = priceText.y;
+
+    // Win text.
+    const ticketWinText = new Text("£0.00", {
+        fill: 0xffff00,
+        fontSize: 42,
+        fontWeight: 'bold'
+    });
+    ticketWinText.anchor.set(0.5);
+    infoMtr.addChild(ticketWinText);
+    ticketWinText.x = balanceText.x + 435;
+    ticketWinText.y = balanceText.y;
+    
+    function updatePriceDisplay(){
+        priceText.text = `£${(ticketPrice / 100).toFixed(2)}`;
+    }
+
+    function updateBalanceDisplay(change = 0){
+        balanceText.text = `£${(balance / 100).toFixed(2)}`;
+
+        if (change > 0){
+            balanceText.style.fill = 0x00ff00;
+        } else if (change < 0){
+            balanceText.style.fill = 0xff0000;
+        } else {
+            balanceText.style.fill = 0xffff00;
+        }
+    }
+
+    function updateTicketWinDisplay(){
+        ticketWinText.text = `£${(winThisTicket / 100).toFixed(2)}`;
+    }
+
+    infoMinus.on('pointerdown', () => {
+        const index = gameData.ticketPrices.indexOf(ticketPrice);
+        if (index > 0){
+            ticketPrice = gameData.ticketPrices[index - 1];
+            updatePriceDisplay();
+        }
+    });
+
+    infoPlus.on('pointerdown', () => {
+        const index = gameData.ticketPrices.indexOf(ticketPrice);
+        if (index < gameData.ticketPrices.length -1){
+            ticketPrice = gameData.ticketPrices[index + 1];
+            updatePriceDisplay();
+        }
+    });
+    
+    
+    // Winning Coins title.
+    const winningTitle = new Text("Winning Coins", {
+        fill: 0xffff00,
+        fontSize: 32,
+        fontWeight: 'bold'
+    });
+    winningTitle.anchor.set(0.5);
+    mainContainer.addChild(winningTitle);
+
+    // Player Coins title.
+    const playerTitle = new Text("Player Coins", {
+        fill: 0xffff00,
+        fontSize: 32,
+        fontWeight: 'bold'
+    });
+    playerTitle.anchor.set(0.5);
+    mainContainer.addChild(playerTitle);
+
+    // Container for winning number coins.
+    const winningContainer = new Container();
+    mainContainer.addChild(winningContainer);
+
+    // Container for winning number coins.
+    const playerContainer = new Container();
+    mainContainer.addChild(playerContainer);
+
+    // --- Play Button ---
+    const playBtn = new Sprite(textures.play_button);
+    playBtn.width = 200;
+    playBtn.height = 110;
+    playBtn.anchor.set(0.5);
+    playBtn.interactive = true;
+    playBtn.cursor = 'pointer';
+    app.stage.addChild(playBtn);
+
+    // --- Overlay for the results ---
+    const overlay = new Container();
+    overlay.visible = false;
+    app.stage.addChild(overlay);
+
+    const overlayBg = new Graphics()
+        .rect(0, 0, app.screen.width, app.screen.height)
+        .fill({ color: 0x000000, alpha: 0.7 });
+    overlay.addChild(overlayBg);
+
+    const overlayText = new Text("", {
+        fill: 0xffff00,
+        fontSize: 64,
+        fontWeight: 'bold',
+        align: 'center'
+    });
+    overlayText.anchor.set(0.5);
+    overlay.addChild(overlayText);
+
+    function showOverlay(message, colour = 0xffff00){
+        overlayText.text = message;
+        overlayText.style.fill = colour;
+        overlayText.x = app.screen.width * 0.5;
+        overlayText.y = app.screen.height * 0.5;
+        overlayBg.width = app.screen.width;
+        overlayBg.height = app.screen.height;
+        overlay.visible = true;
+        overlay.alpha = 0;
+        gsap.to(overlay, { alpha: 1, duration: 0.5 });
+        setTimeout(() => {
+            gsap.to(overlay, { alpha: 0, duration: 0.5, onComplete: () => overlay.visible = false }, 2500);
+        })
+    }
+
 
     // --- Game data (initialised per ticket) ---
     let winningNumbers = [];
@@ -218,11 +241,7 @@ async function loadGameData() {
     let winFound = false;
     let allWinningRevealed = false;
     let ticketInProgress = false;
-
-    function updateHUD() {
-        hudText.text = `Balance: £${(balance / 100).toFixed(2)} | Ticket: £${(ticketPrice / 100).toFixed(2)}`;
-        updatePriceButtons();
-    }
+    
 
     // Parses the scenario strings.
     function parseScenario(scenarioStr) {
@@ -254,20 +273,23 @@ async function loadGameData() {
 
     function startNewTicket() {
         if (ticketInProgress) {
-            resultText.text = "Finish your current ticket first! ";
             return;
         }
         if (balance < ticketPrice) {
-            resultText.text = "Insufficient funds!";
             return;
         }
 
+        // Makes sure the overlay is hidden when a new ticket is started.
+        overlay.visible = false;
+        overlay.alpha = 0;
+
         // Deducts ticket cost.
         balance -= ticketPrice;
-        updateHUD();
+        updateBalanceDisplay(-ticketPrice);
 
         winFound = false;
         winThisTicket = 0;
+        updateTicketWinDisplay(); // Resets the ticket win.
         allWinningRevealed = false;
         ticketInProgress = true;
 
@@ -292,19 +314,18 @@ async function loadGameData() {
 
         setPlayerCoinsEnabled(false) // Unlocks the coins.; // Locks the coins at the start.
 
-        resultText.text = "Click a winning number to reveal!";
         onResize();
     }
 
     function endTicket() {
         if (winThisTicket > 0) {
             balance += winThisTicket; // Adds winnings.
-            resultText.text += `You Won: £${(winThisTicket / 100).toFixed(2)}!`;
+            updateBalanceDisplay(winThisTicket);
+            showOverlay(`Congrats! You Won: £${(winThisTicket / 100).toFixed(2)}!`, 0x00ff00);
         } else {
-            resultText.text = "You Lost! Better luck next time!";
+            updateBalanceDisplay(0);
+            showOverlay("You Lost! Better luck next time!", 0xff0000);
         }
-        updateHUD();
-
         ticketInProgress = false; // Allows for a new ticket to be bought.
     }
 
@@ -360,24 +381,22 @@ async function loadGameData() {
                         if (Object.keys(gameData.instantWins).includes(num.toString())) {
                             back.texture = Assets.get("barrel_of_coins_revealed");
                             winThisTicket += gameData.instantWins[num][ticketPrice];
+                            updateTicketWinDisplay();
                             winFound = true;
-                            resultText.text = `Instant Win: ${num}! `;
                         } else if (winningNumbers.includes(num)) {
                             back.texture = Assets.get("treasure_chest_revealed_GREEN");
                             winThisTicket += ticketPrice * gameData.prizeMultipliers.match;
+                            updateTicketWinDisplay();
                             winFound = true;
-                            resultText.text = `Matched ${num}! `;
 
-                            // Flip the matching winning chest green
+                            // Flips the matching winning chest, green.
                             winningContainer.children.forEach(wc => {
                                 if (wc.number === num && wc.revealed) {
-                                    // FIXED: Corrected asset name to match expected capitalization
                                     wc.getChildByName("back").texture = Assets.get("treasure_chest_revealed_GREEN");
                                 }
                             });
                         } else {
                             back.texture = Assets.get("pirate_ship_revealed_red");
-                            if (!winFound) resultText.text = "No match yet...";
                         }
                     }
 
@@ -388,8 +407,6 @@ async function loadGameData() {
                     if (isWinningRow) {
                         const allRevealed = winningContainer.children.every(c => c.revealed);
                         if (allRevealed) {
-                            allWinningRevealed = true;
-                            resultText.text = "Now reveal your coins!";
                             setPlayerCoinsEnabled(true); // Unlocks the coins.
                         }
                     } else {
@@ -410,24 +427,15 @@ async function loadGameData() {
     function onResize() {
         const gapTitleToRow = 5; // Space under the titles.
         const gapGroups = 50; // Space between the winning and player groups.
-        const gapBottom = 60; // Space before the result text.
         const padding = 20;
 
-        // Positions the HUD at the top centre.
-        hudText.x = app.screen.width * 0.5;
-
-        // Positions the selector at the bottom right.
-        selectorContainer.x = app.screen.width - selectorContainer.width - padding;
-        selectorContainer.y = app.screen.height - selectorContainer.height - padding;
-
         // Positions the play button (right-centre above the selector).
-        playBtn.x = app.screen.width - selectorContainer.width - padding - 30;
+        playBtn.x = app.screen.width - padding - 100;
         playBtn.y = app.screen.height * 0.5;
 
         // Titles centred horizontally.
         winningTitle.x = 0;
         playerTitle.x = 0;
-        resultText.x = 0;
 
         // Row containers pivoted to their middle so they stay centred.
         winningContainer.pivot.x = winningContainer.width * 0.5;
@@ -446,17 +454,14 @@ async function loadGameData() {
         currentY += playerTitle.height + gapTitleToRow;
         playerContainer.y = currentY;
 
-        currentY += playerContainer.height + gapBottom;
-        resultText.y = currentY;
-
         // Calculates the true bounding box of everything inside the mainContainer.
         const bounds = mainContainer.getLocalBounds();
 
         // Sets the pivot to the centre of that bounding box.
-        mainContainer.pivot.set(bounds.x + bounds.width * 0.5, bounds.y + bounds.height * 0.5);
+        mainContainer.pivot.set(bounds.x + bounds.width * 0.5, bounds.y);
 
         // Places that pivot at the centre of the screen.
-        mainContainer.position.set(app.screen.width * 0.5, app.screen.height * 0.5);
+        mainContainer.position.set(app.screen.width * 0.5, 30);
 
         // Positions the info meter at the bottom centre.
         infoMtr.x = app.screen.width * 0.5;
@@ -466,7 +471,9 @@ async function loadGameData() {
     playBtn.on("pointerdown", () => startNewTicket());
 
     window.addEventListener('resize', onResize);
-    updateHUD();
+    updatePriceDisplay();
+    updateBalanceDisplay(0);
+    updateTicketWinDisplay();
     onResize();
 
 })();
