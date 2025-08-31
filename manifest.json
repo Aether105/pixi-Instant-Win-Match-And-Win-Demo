@@ -4,6 +4,7 @@
       "name": "main",
       "assets": [
         { "alias": "background", "src": "./assets/background.png" },
+        { "alias": "startScreen", "src": "./assets/startScreen-FG.png" },
         { "alias": "treasure_chest", "src": "./assets/treasure_chest.png" },
         { "alias": "treasure_chest_revealed", "src": "./assets/treasure_chest_revealed.png" },
         { "alias": "treasure_chest_revealed_GREEN", "src": "./assets/treasure_chest_revealed_GREEN.png" },

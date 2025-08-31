@@ -24,11 +24,24 @@ async function loadGameData() {
     });
     document.body.appendChild(app.canvas);
 
-    // --- Background ---
-    const bg = Sprite.from(textures.background);
-    bg.width = app.screen.width;
-    bg.height = app.screen.height;
-    app.stage.addChild(bg);
+    // --- Screens ---
+    const startScreen = new Container();
+    app.stage.addChild(startScreen);
+
+    const gameScreen = new Container();
+    gameScreen.visible = false;
+    app.stage.addChild(gameScreen);
+
+    // --- Backgrounds ---
+    const startBg = Sprite.from(textures.startScreen);
+    startBg.width = app.screen.width;
+    startBg.height = app.screen.height;
+    startScreen.addChild(startBg);
+
+    const gameBg = Sprite.from(textures.background);
+    gameBg.width = app.screen.width;
+    gameBg.height = app.screen.height;
+    gameScreen.addChild(gameBg);
 
     // --- Balance and ticket price setup ---
     let balance = 2000; // Starting balance in pence.
@@ -37,14 +50,14 @@ async function loadGameData() {
 
     // The container for the main game (everything goes inside of this).
     const mainContainer = new Container();
-    app.stage.addChild(mainContainer);
+    gameScreen.addChild(mainContainer);
 
     // --- Info-Meter ---
     const infoMtr = new Sprite(textures.info_meter);
     infoMtr.width = 700;
     infoMtr.height = 450;
     infoMtr.anchor.set(0.5);
-    app.stage.addChild(infoMtr);
+    gameScreen.addChild(infoMtr);
 
     // Info Minus button.
     const infoMinus = new Sprite(textures.minus);
@@ -53,7 +66,7 @@ async function loadGameData() {
     infoMinus.anchor.set(0.5);
     infoMinus.eventMode = 'static'; // The v8 way to receive events in replacement for interactive = true.
     infoMinus.cursor = 'pointer';
-    
+
     infoMtr.addChild(infoMinus);
 
     // Relative coordinates inside the meter.
@@ -79,7 +92,7 @@ async function loadGameData() {
     infoPlus.anchor.set(0.5);
     infoPlus.eventMode = 'static';
     infoPlus.cursor = 'pointer';
-    
+
     infoMtr.addChild(infoPlus);
 
     infoPlus.x = infoMtr.width * -0.4;
@@ -127,30 +140,30 @@ async function loadGameData() {
     infoMtr.addChild(ticketWinText);
     ticketWinText.x = balanceText.x + 435;
     ticketWinText.y = balanceText.y;
-    
-    function updatePriceDisplay(){
+
+    function updatePriceDisplay() {
         priceText.text = `£${(ticketPrice / 100).toFixed(2)}`;
     }
 
-    function updateBalanceDisplay(change = 0){
+    function updateBalanceDisplay(change = 0) {
         balanceText.text = `£${(balance / 100).toFixed(2)}`;
 
-        if (change > 0){
+        if (change > 0) {
             balanceText.style.fill = 0x00ff00;
-        } else if (change < 0){
+        } else if (change < 0) {
             balanceText.style.fill = 0xff0000;
         } else {
             balanceText.style.fill = 0xffff00;
         }
     }
 
-    function updateTicketWinDisplay(){
+    function updateTicketWinDisplay() {
         ticketWinText.text = `£${(winThisTicket / 100).toFixed(2)}`;
     }
 
     infoMinus.on('pointerdown', () => {
         const index = gameData.ticketPrices.indexOf(ticketPrice);
-        if (index > 0){
+        if (index > 0) {
             ticketPrice = gameData.ticketPrices[index - 1];
             updatePriceDisplay();
         }
@@ -158,13 +171,13 @@ async function loadGameData() {
 
     infoPlus.on('pointerdown', () => {
         const index = gameData.ticketPrices.indexOf(ticketPrice);
-        if (index < gameData.ticketPrices.length -1){
+        if (index < gameData.ticketPrices.length - 1) {
             ticketPrice = gameData.ticketPrices[index + 1];
             updatePriceDisplay();
         }
     });
-    
-    
+
+
     // Winning Coins title.
     const winningTitle = new Text("Winning Coins", {
         fill: 0xffff00,
@@ -192,18 +205,26 @@ async function loadGameData() {
     mainContainer.addChild(playerContainer);
 
     // --- Play Button ---
-    const playBtn = new Sprite(textures.play_button);
-    playBtn.width = 200;
-    playBtn.height = 110;
-    playBtn.anchor.set(0.5);
-    playBtn.interactive = true;
-    playBtn.cursor = 'pointer';
-    app.stage.addChild(playBtn);
+    const playBtnStart = new Sprite(textures.play_button);
+    playBtnStart.width = 200;
+    playBtnStart.height = 110;
+    playBtnStart.anchor.set(0.5);
+    playBtnStart.interactive = true;
+    playBtnStart.cursor = 'pointer';
+    startScreen.addChild(playBtnStart); // Starts on the intro screen.
+
+    const playBtnGame = new Sprite(textures.play_button);
+    playBtnGame.width = 200;
+    playBtnGame.height = 110;
+    playBtnGame.anchor.set(0.5);
+    playBtnGame.interactive = true;
+    playBtnGame.cursor = 'pointer';
+    gameScreen.addChild(playBtnGame); // Continues onto the game screen.
 
     // --- Overlay for the results ---
     const overlay = new Container();
     overlay.visible = false;
-    app.stage.addChild(overlay);
+    gameScreen.addChild(overlay);
 
     const overlayBg = new Graphics()
         .rect(0, 0, app.screen.width, app.screen.height)
@@ -219,7 +240,7 @@ async function loadGameData() {
     overlayText.anchor.set(0.5);
     overlay.addChild(overlayText);
 
-    function showOverlay(message, colour = 0xffff00){
+    function showOverlay(message, colour = 0xffff00) {
         overlayText.text = message;
         overlayText.style.fill = colour;
         overlayText.x = app.screen.width * 0.5;
@@ -241,7 +262,8 @@ async function loadGameData() {
     let winFound = false;
     let allWinningRevealed = false;
     let ticketInProgress = false;
-    
+    let gamePhase = "start"; // Start -> setup -> playing.
+
 
     // Parses the scenario strings.
     function parseScenario(scenarioStr) {
@@ -327,6 +349,7 @@ async function loadGameData() {
             showOverlay("You Lost! Better luck next time!", 0xff0000);
         }
         ticketInProgress = false; // Allows for a new ticket to be bought.
+        gamePhase = "setup"; // Goes back to the setup phase.
     }
 
     // Creates a row of coins.
@@ -427,11 +450,12 @@ async function loadGameData() {
     function onResize() {
         const gapTitleToRow = 5; // Space under the titles.
         const gapGroups = 50; // Space between the winning and player groups.
-        const padding = 20;
 
         // Positions the play button (right-centre above the selector).
-        playBtn.x = app.screen.width - padding - 100;
-        playBtn.y = app.screen.height * 0.5;
+        playBtnStart.x = app.screen.width - 120;
+        playBtnStart.y = app.screen.height * 0.5;
+        playBtnGame.x = app.screen.width - 120;
+        playBtnGame.y = app.screen.height * 0.5;
 
         // Titles centred horizontally.
         winningTitle.x = 0;
@@ -468,7 +492,22 @@ async function loadGameData() {
         infoMtr.y = app.screen.height - infoMtr.height * 0.5 + 140; // 140px margin.
     }
 
-    playBtn.on("pointerdown", () => startNewTicket());
+    // --- Play button behaviour ---
+    function handlePlayButton(){
+        if (gamePhase === "start") {
+            startScreen.visible = false;
+            gameScreen.visible = true;
+            gamePhase = "setup";
+        } else if (gamePhase === "setup") {
+            startNewTicket();
+            gamePhase = "playing";
+        } else if (gamePhase === "playing") {
+            //
+        }
+    }
+
+    playBtnStart.on('pointerdown', handlePlayButton);
+    playBtnGame.on('pointerdown', handlePlayButton);
 
     window.addEventListener('resize', onResize);
     updatePriceDisplay();
