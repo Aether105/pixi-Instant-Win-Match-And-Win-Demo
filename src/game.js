@@ -41,6 +41,14 @@ export class Game {
     this.container.addChild(this.playerContainer);
   }
 
+  // Enables/disables both rows.
+  setAllCoinsEnabled(enabled) {
+    [...this.winningContainer.children, ...this.playerContainer.children].forEach(coin => {
+      coin.interactive = enabled;
+      coin.cursor = enabled ? 'pointer' : 'default';
+    });
+  }
+
   // Enables and disables the player numbers.
   setPlayerCoinsEnabled(enabled) {
     this.playerContainer.children.forEach((coin) => {
@@ -103,25 +111,13 @@ export class Game {
     }
   }
 
+  // Builds a ticket but doesn't deduct the cost yet.
   startNewTicket() {
-    if (state.ticketInProgress) {
-      return;
-    }
-    if (state.balance < state.ticketPrice) {
-      return;
-    }
+    state.ticketInProgress = false;
 
-    // Makes sure the overlay is hidden when a new ticket is started.
-    this.ui.overlay.visible = false;
-    this.ui.overlay.alpha = 0;
-
-    // Deducts ticket cost.
-    state.balance -= state.ticketPrice;
-    this.ui.updateBalanceDisplay(-state.ticketPrice);
-
-    state.winThisTicket = 0;
-    this.ui.updateTicketWinDisplay(); // Resets the ticket win.
-    state.ticketInProgress = true;
+    // Clears the containers and builds new coins.
+    this.winningContainer.removeChildren();
+    this.playerContainer.removeChildren();
 
     // Picks a random scenario from the JSON.
     const scenarioStr = state.gameData.scenarios[
@@ -134,35 +130,65 @@ export class Game {
     state.winningNumbers = scenario.winningNumbers.slice();
     state.playerNumbers = scenario.playerNumbers.slice();
 
-    // Clears the old coins.
-    this.winningContainer.removeChildren();
-    this.playerContainer.removeChildren();
-
     // Creates the winning and player coins.
     this.setupCoins(this.winningContainer, state.winningNumbers, true);
     this.setupCoins(this.playerContainer, state.playerNumbers, false);
 
-    this.setPlayerCoinsEnabled(false);
+    // Locks everything until the Play button is pressed again.
+    this.setAllCoinsEnabled(false);
 
     this.onResize();
   }
 
-  endTicket() {
-    if (state.winThisTicket > 0) {
-      state.balance += state.winThisTicket; // adds winnings.
-      this.ui.updateBalanceDisplay(state.winThisTicket);
-      this.ui.showOverlay(`Congrats! You Won: £${(state.winThisTicket / 100).toFixed(2)}!`, 0x00ff00);
-    } else {
-      this.ui.updateBalanceDisplay(0);
-      this.ui.showOverlay("You Lost! Better luck next time!", 0xff0000);
+  // Deducts cost and actually begins the ticket.
+  beginTicketPlay() {
+    if (state.ticketInProgress) {
+      return;
     }
+    if (state.balance < state.ticketPrice) {
+      return;
+    }
+
+    // Deducts ticket cost.
+    state.balance -= state.ticketPrice;
+    this.ui.updateBalanceDisplay(-state.ticketPrice);
+
+    state.winThisTicket = 0;
+    this.ui.updateTicketWinDisplay(); // Resets the ticket win.
+    state.ticketInProgress = true;
+
+    // Makes sure that only the winning coins are clickable at first.
+    this.setAllCoinsEnabled(false);
+    this.winningContainer.children.forEach(c => {
+      c.interactive = true;
+      c.cursor = 'pointer';
+    });
+  }
+
+  endTicket() {
+    const winAmount = state.winThisTicket;
+
     state.ticketInProgress = false; // Allows for a new ticket to be bought.
     state.gamePhase = "setup"; // Goes back to the setup phase.
 
-    // Notifies the main file so it can re-enable the play button.
-    if (typeof this.onTicketEnd === 'function') {
-      this.onTicketEnd();
-    }
+    // Disables the coins straight away.
+    this.setAllCoinsEnabled(false);
+
+    setTimeout(() => {
+      if (winAmount > 0) {
+        state.balance += winAmount;
+        this.ui.updateBalanceDisplay(winAmount);
+        this.ui.showOverlay(`Congrats! You Won: £${(state.winThisTicket / 100).toFixed(2)}!`, 0x00ff00);
+      } else {
+        this.ui.updateBalanceDisplay(0);
+        this.ui.showOverlay("You Lost! Better luck next time!", 0xff0000);
+      }
+
+      // Notifies the main file so it can re-enable the play button.
+      if (typeof this.onTicketEnd === 'function') {
+        this.onTicketEnd();
+      }
+    }, 750); // 0.75 of a second delay before showing the overlay.
   }
 
   // --- Handles the layout and centring ---

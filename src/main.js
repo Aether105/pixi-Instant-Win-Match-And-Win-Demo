@@ -101,26 +101,28 @@ import { Game } from "./game.js";
   attachButtonFX(playBtnGame);
 
   // --- Play button behaviour ---
-  function handlePlayButton() {
+  function handlePlayButton(btn) {
     if (state.gamePhase === "start") {
       startScreen.visible = false;
       gameScreen.visible = true;
       ui.container.visible = true; // Shows the UI only in the game.
       state.gamePhase = "setup";
+      game.startNewTicket(); // Creates a new ticket, but with no cost deduction.
       setPlayButtonEnabled(playBtnGame, true);
-    } else if (state.gamePhase === "setup") {
-      game.startNewTicket();
+    } else if (state.gamePhase === "setup" && btn === playBtnGame) {
+      game.beginTicketPlay(); // Now deducts the cost and enables the winning coins.
       state.gamePhase = "playing";
       setPlayButtonEnabled(playBtnGame, false); // Disables the play button while playing.
     }
   }
 
-  playBtnStart.on('pointertap', handlePlayButton);
-  playBtnGame.on('pointertap', handlePlayButton);
+  playBtnStart.on('pointertap', () => handlePlayButton(playBtnStart));
+  playBtnGame.on('pointertap', () => handlePlayButton(playBtnGame));
 
   // The play button is then re-enabled when the tickets ends.
   game.onTicketEnd = () => {
     state.gamePhase = "setup";
+    game.startNewTicket();
     setPlayButtonEnabled(playBtnGame, true);
   };
 
