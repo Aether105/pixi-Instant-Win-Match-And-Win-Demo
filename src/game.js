@@ -46,20 +46,26 @@ export class Game {
     this.playerContainer.children.forEach((coin) => {
       coin.interactive = enabled;
       coin.cursor = enabled ? 'pointer' : 'not-allowed';
-      coin.alpha = enabled ? 1 : 0.5;
     });
   }
 
-  // Creates a row of coins.
+  // Creates a grid of coins and keeps the rows centred under their titles.
   setupCoins(container, numbers, isWinningRow) {
-    // Creates coin graphics for each number.
-    numbers.forEach((num, index) => {
+    const perRow = 3;
+    const spacing = 150;
+    const coinSize = 100;
+    const coinHalf = coinSize * 0.5;
+
+    for (let i = 0; i < numbers.length; i++) {
+      const num = numbers[i];
       const coin = new Coin(num, isWinningRow, (coinInstance) => this.handleReveal(coinInstance), state.textures);
-      // Arranges them in a grid: 3 per row.
-      coin.x = (index % 3) * 150;
-      coin.y = Math.floor(index / 3) * 150;
+      const col = i % perRow;
+      const row = Math.floor(i / perRow);
+
+      coin.x = col * spacing + coinHalf;
+      coin.y = row * spacing + coinHalf;
       container.addChild(coin);
-    });
+    }
   }
 
   handleReveal(coin) {
@@ -121,7 +127,7 @@ export class Game {
     const scenarioStr = state.gameData.scenarios[
       Math.floor(Math.random() * state.gameData.scenarios.length)
     ];
-    
+
     // Parses it into structured data.
     const scenario = parseScenario(scenarioStr);
 
@@ -152,6 +158,11 @@ export class Game {
     }
     state.ticketInProgress = false; // Allows for a new ticket to be bought.
     state.gamePhase = "setup"; // Goes back to the setup phase.
+
+    // Notifies the main file so it can re-enable the play button.
+    if (typeof this.onTicketEnd === 'function') {
+      this.onTicketEnd();
+    }
   }
 
   // --- Handles the layout and centring ---

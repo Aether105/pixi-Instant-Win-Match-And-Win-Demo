@@ -46,22 +46,59 @@ import { Game } from "./game.js";
   app.stage.addChild(ui.container);
   ui.container.visible = false; // Hides it on the startScreen initially.
 
-  // --- Play Button ---
+  // --- Play Buttons ---
+  const PLAY_BTN_WIDTH = 200;
+  const PLAY_BTN_HEIGHT = 110;
+
   const playBtnStart = new Sprite(state.textures.play_button);
-  playBtnStart.width = 200;
-  playBtnStart.height = 110;
   playBtnStart.anchor.set(0.5);
-  playBtnStart.interactive = true;
-  playBtnStart.cursor = 'pointer'; // Starts on the intro screen.
   startScreen.addChild(playBtnStart);
 
   const playBtnGame = new Sprite(state.textures.play_button);
-  playBtnGame.width = 200;
-  playBtnGame.height = 110;
   playBtnGame.anchor.set(0.5);
-  playBtnGame.interactive = true;
-  playBtnGame.cursor = 'pointer'; // Continues onto the game screen.
   gameScreen.addChild(playBtnGame);
+
+  // Helper to enable/disable the buttons visually.
+  function setPlayButtonEnabled(btn, enabled){
+    btn.interactive = enabled;
+    btn.cursor = enabled ? 'pointer' : 'default';
+    btn.alpha = enabled ? 1 : 0.5;
+    btn.width = PLAY_BTN_WIDTH;
+    btn.height = PLAY_BTN_HEIGHT;
+  }
+
+  // Common behaviour for both buttons.
+  function attachButtonFX(btn){
+    btn.interactive = true;
+    btn.cursor = 'pointer';
+    setPlayButtonEnabled(btn, true);
+
+    btn.on('pointerover', () => {
+      if (!btn.interactive) return;
+      btn.width = PLAY_BTN_WIDTH * 1.05;
+      btn.height = PLAY_BTN_HEIGHT * 1.05;
+    });
+
+    btn.on('pointerout', () => {
+      btn.width = PLAY_BTN_WIDTH;
+      btn.height = PLAY_BTN_HEIGHT;
+    });
+
+    btn.on('pointerdown', () => {
+      if (!btn.interactive) return;
+      btn.width = PLAY_BTN_WIDTH * 0.95;
+      btn.height = PLAY_BTN_HEIGHT * 0.95;
+    });
+
+    btn.on('pointerup', () => {
+      if (!btn.interactive) return;
+      btn.width = PLAY_BTN_WIDTH * 1.05;
+      btn.height = PLAY_BTN_HEIGHT * 1.05;
+    });
+  }
+
+  attachButtonFX(playBtnStart);
+  attachButtonFX(playBtnGame);
 
   // --- Play button behaviour ---
   function handlePlayButton() {
@@ -70,14 +107,22 @@ import { Game } from "./game.js";
       gameScreen.visible = true;
       ui.container.visible = true; // Shows the UI only in the game.
       state.gamePhase = "setup";
+      setPlayButtonEnabled(playBtnGame, true);
     } else if (state.gamePhase === "setup") {
       game.startNewTicket();
       state.gamePhase = "playing";
+      setPlayButtonEnabled(playBtnGame, false); // Disables the play button while playing.
     }
   }
 
-  playBtnStart.on('pointerdown', handlePlayButton);
-  playBtnGame.on('pointerdown', handlePlayButton);
+  playBtnStart.on('pointertap', handlePlayButton);
+  playBtnGame.on('pointertap', handlePlayButton);
+
+  // The play button is then re-enabled when the tickets ends.
+  game.onTicketEnd = () => {
+    state.gamePhase = "setup";
+    setPlayButtonEnabled(playBtnGame, true);
+  };
 
   function onResize() {
     // Backgrounds.
@@ -99,4 +144,9 @@ import { Game } from "./game.js";
 
   window.addEventListener('resize', onResize);
   onResize();
+
+  // Initialises the state.
+  state.gamePhase = "start";
+  setPlayButtonEnabled(playBtnStart, true);
+  setPlayButtonEnabled(playBtnGame, true);
 })();
