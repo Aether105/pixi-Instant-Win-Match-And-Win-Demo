@@ -79,18 +79,23 @@ export class Game {
   handleReveal(coin) {
     const textures = state.textures;
     if (coin.isWinningRow) {
-      coin.back.texture = textures.treasure_chest_revealed;
+      // Shows the revealed chest and number.
+      coin.setReveal(textures.treasure_chest_revealed, coin.number);
+
       const allRevealed = this.winningContainer.children.every((c) => c.revealed);
       if (allRevealed) {
         this.setPlayerCoinsEnabled(true); // Unlocks the coins.
       }
     } else {
       if (Object.keys(state.gameData.instantWins).includes(coin.number.toString())) {
-        coin.back.texture = textures.barrel_of_coins_revealed;
+        coin.setReveal(
+          textures.barrel_of_coins_revealed,
+          `+${state.gameData.instantWins[coin.number][state.ticketPrice] / 100}`
+        );
         state.winThisTicket += state.gameData.instantWins[coin.number][state.ticketPrice];
         this.ui.updateTicketWinDisplay();
       } else if (state.winningNumbers.includes(coin.number)) {
-        coin.back.texture = textures.treasure_chest_revealed_GREEN;
+        coin.setReveal(textures.treasure_chest_revealed_GREEN, coin.number);
         state.winThisTicket += state.ticketPrice * state.gameData.prizeMultipliers.match;
         this.ui.updateTicketWinDisplay();
 
@@ -101,7 +106,7 @@ export class Game {
           }
         });
       } else {
-        coin.back.texture = textures.pirate_ship_revealed_red;
+        coin.setReveal(textures.pirate_ship_revealed_red, coin.number);
       }
       // --- Ends the ticket when all the coins have been revealed ---
       const allRevealed = this.playerContainer.children.every((c) => c.revealed);

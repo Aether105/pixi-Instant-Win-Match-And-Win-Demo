@@ -1,4 +1,4 @@
-import { Container, Sprite } from "https://cdn.jsdelivr.net/npm/pixi.js@8.x/dist/pixi.mjs";
+import { Container, Sprite, Text } from "https://cdn.jsdelivr.net/npm/pixi.js@8.x/dist/pixi.mjs";
 import gsap from "https://cdn.jsdelivr.net/npm/gsap@3.12.5/index.js";
 
 export default class Coin extends Container {
@@ -7,6 +7,7 @@ export default class Coin extends Container {
     this.number = num; // Stores the number for later lookup.
     this.isWinningRow = isWinningRow;
     this.revealed = false;
+    this.onReveal = onReveal;
 
     const frontTex = isWinningRow ? textures.treasure_chest : textures.pirate_ship;
 
@@ -21,7 +22,6 @@ export default class Coin extends Container {
     this.back.width = 100;
     this.back.height = 100;
     this.back.anchor.set(0.5);
-    
     this.back.position.set(0, 0);
     this.back.visible = false;
     this.back.name = "back";
@@ -30,6 +30,16 @@ export default class Coin extends Container {
 
     this.pivot.set(0, 0);
     this.position.set(0, 0);
+
+    // Label for the text in the middle of the coins.
+    this.label = new Text('', {
+      fill: 0xffffff,
+      fontSize: 20,
+      fontWeight: 'bold'
+    });
+    this.label.anchor.set(0.5);
+    this.label.visible = false;
+    this.addChild(this.label);
 
     this.interactive = true;
     this.cursor = 'pointer';
@@ -44,13 +54,21 @@ export default class Coin extends Container {
         x: 0,
         duration: 0.3,
         onComplete: () => {
-          onReveal(this);
-
+          if (this.onReveal){
+            this.onReveal(this);
+          }
           this.front.visible = false;
           this.back.visible = true;
           gsap.to(this.scale, { x: 1, duration: 0.3 });
         },
       });
     });
+  }
+
+  // Calls this from Game.handleReveal to set the revealed texture and text.
+  setReveal(texture, text){
+    this.back.texture = texture;
+    this.label.text = text || '';
+    this.label.visible = !!text;
   }
 }
