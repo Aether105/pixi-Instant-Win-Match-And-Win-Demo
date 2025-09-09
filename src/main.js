@@ -126,6 +126,43 @@ import { Game } from "./game.js";
     setPlayButtonEnabled(playBtnGame, true);
   };
 
+  // --- Dev. scenario panel ---
+  const devPanel = document.createElement('div');
+  devPanel.style.position = 'fixed';
+  devPanel.style.top = '10px';
+  devPanel.style.left = '10px';
+  devPanel.style.background = 'rgb(0, 0, 0, 0.8)';
+  devPanel.style.color = '#fff';
+  devPanel.style.padding = '10px';
+  devPanel.style.maxHeight = '80vh';
+  devPanel.style.overflowY = 'auto';
+  devPanel.style.zIndex = '9999';
+  devPanel.style.fontFamily = 'monospace';
+  devPanel.style.fontSize = '14px';
+  devPanel.style.display = 'none';
+  document.body.appendChild(devPanel);
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key.toLowerCase() === 'f'){
+      devPanel.style.display = devPanel.style.display === 'none' ? 'block' : 'none';
+    }
+  });
+
+  function populateDevPanel() {
+    devPanel.innerHTML = '<strong>Select a Scenario</strong><br>';
+    state.gameData.scenarios.forEach((scenarioStr, index) => {
+      const btn = document.createElement('button');
+      btn.textContent = `Scenario ${index + 1}`;
+      btn.style.margin = '2px';
+      btn.onclick = () => {
+        state.forcedScenario = scenarioStr;
+        alert(`Next ticket will use scenario ${index + 1}`);
+      };
+      devPanel.appendChild(btn);
+    });
+  }
+  populateDevPanel();
+
   function onResize() {
     // Backgrounds.
     startBg.width = app.screen.width;

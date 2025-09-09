@@ -115,14 +115,24 @@ export class Game {
   startNewTicket() {
     state.ticketInProgress = false;
 
+    state.winThisTicket = 0;
+    this.ui.updateTicketWinDisplay(); // Resets the ticket win.
+
     // Clears the containers and builds new coins.
     this.winningContainer.removeChildren();
     this.playerContainer.removeChildren();
 
-    // Picks a random scenario from the JSON.
-    const scenarioStr = state.gameData.scenarios[
-      Math.floor(Math.random() * state.gameData.scenarios.length)
-    ];
+    // Uses a forced scenario if the dev panel sets one, otherwise will choose a scenario at random.
+    let scenarioStr;
+    if (state.forcedScenario){
+      scenarioStr = state.forcedScenario;
+      state.forcedScenario = null;
+    } else {
+      // Picks a random scenario from the JSON.
+      scenarioStr = state.gameData.scenarios[
+        Math.floor(Math.random() * state.gameData.scenarios.length)
+      ];
+    }
 
     // Parses it into structured data.
     const scenario = parseScenario(scenarioStr);
@@ -153,8 +163,6 @@ export class Game {
     state.balance -= state.ticketPrice;
     this.ui.updateBalanceDisplay(-state.ticketPrice);
 
-    state.winThisTicket = 0;
-    this.ui.updateTicketWinDisplay(); // Resets the ticket win.
     state.ticketInProgress = true;
 
     // Makes sure that only the winning coins are clickable at first.
