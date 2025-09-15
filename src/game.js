@@ -57,16 +57,48 @@ export class Game {
     });
   }
 
+  // Deals with making the coin sizing and spacing responsive.
+  getResponsiveCoinSize() {
+    const screenWidth = this.app.screen.width;
+    const screenHeight = this.app.screen.height;
+
+    // Estimates the available height after the titles and info meter.
+    const infoHeight = this.ui?.infoPanel?.height || 150;
+    const availableHeight = screenHeight - (infoHeight + 150);
+
+    // Base sizing at fullHD.
+    const baseCoinSize = 155;
+    const baseSpacing = 180;
+
+    const heightRatio = availableHeight / 600;
+    const widthRatio = screenWidth / 1600;
+
+    // Allows it to go a bit larger but caps at 1.2x base.
+    const scaleRatio = Math.min(Math.max(heightRatio, 0.5), 1.2);
+
+    const coinSize = baseCoinSize * scaleRatio;
+    const spacing = baseSpacing * scaleRatio;
+
+    return { coinSize, spacing };
+  }
+
   // Creates a grid of coins and keeps the rows centred under their titles.
   setupCoins(container, numbers, isWinningRow) {
     const perRow = 3;
-    const spacing = 150;
-    const coinSize = 100;
+    const { coinSize, spacing } = this.getResponsiveCoinSize();
     const coinHalf = coinSize * 0.5;
 
     for (let i = 0; i < numbers.length; i++) {
       const num = numbers[i];
       const coin = new Coin(num, isWinningRow, (coinInstance) => this.handleReveal(coinInstance), state.textures);
+
+      // Sets the size of the front/back of the coins.
+      coin.front.width = coin.front.height = coinSize;
+      coin.back.width = coin.back.height = coinSize;
+
+      // Scales the label font.
+      coin.label.style.fontSize = coinSize * 0.2;
+
       const col = i % perRow;
       const row = Math.floor(i / perRow);
 
@@ -236,8 +268,19 @@ export class Game {
     // Sets the pivot to the centre of that bounding box.
     this.container.pivot.set(bounds.x + bounds.width * 0.5, bounds.y);
 
-    // Places that pivot at the centre of the screen.
-    this.container.position.set(this.app.screen.width * 0.5, 30);
+    // Places that pivot at the centre of the screen with top offset.
+    const infoHeight = this.ui?.infoPanel?.height || 150;
+    const topOffSet = 60;
+    this.container.position.set(this.app.screen.width * 0.5, topOffSet);
+
+    // Scales down the container so it doesn't overlap the infometer.
+    const maxHeight = this.app.screen.height - (infoHeight + 50);
+    if (this.container.height > maxHeight) {
+      const scaleFactor = maxHeight / this.container.height;
+      this.container.scale.set(scaleFactor);
+    } else {
+      this.container.scale.set(1);
+    }
   }
 
 }

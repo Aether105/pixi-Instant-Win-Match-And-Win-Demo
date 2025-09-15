@@ -11,16 +11,19 @@ export default class Coin extends Container {
 
     const frontTex = isWinningRow ? textures.treasure_chest : textures.pirate_ship;
 
+    // Keeps a default size reference for scaling purposes.
+    this.defaultSize = 100;
+
     this.front = new Sprite(frontTex);
-    this.front.width = 100;
-    this.front.height = 100;
+    this.front.width = this.defaultSize;
+    this.front.height = this.defaultSize;
     this.front.anchor.set(0.5);
     this.front.position.set(0, 0); // Centres within the container.
     this.front.name = "front";
 
     this.back = new Sprite();
-    this.back.width = 100;
-    this.back.height = 100;
+    this.back.width = this.defaultSize;
+    this.back.height = this.defaultSize;
     this.back.anchor.set(0.5);
     this.back.position.set(0, 0);
     this.back.visible = false;
@@ -63,6 +66,16 @@ export default class Coin extends Container {
         },
       });
     });
+  }
+
+  // Lets the game scale the coins cleanly.
+  resizeTo(coinSize){
+    const scale = coinSize / this.defaultSize;
+    this.front.width = this.defaultSize * scale;
+    this.front.height = this.defaultSize * scale;
+    this.back.width = this.defaultSize * scale;
+    this.back.height = this.defaultSize * scale;
+    this.label.style.fontSize = 20 * scale;
   }
 
   // Calls this from Game.handleReveal to set the revealed texture and text.
