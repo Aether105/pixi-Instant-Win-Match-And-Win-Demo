@@ -92,12 +92,7 @@ export class Game {
       const num = numbers[i];
       const coin = new Coin(num, isWinningRow, (coinInstance) => this.handleReveal(coinInstance), state.textures);
 
-      // Sets the size of the front/back of the coins.
-      coin.front.width = coin.front.height = coinSize;
-      coin.back.width = coin.back.height = coinSize;
-
-      // Scales the label font.
-      coin.label.style.fontSize = coinSize * 0.2;
+      coin.resizeTo(coinSize); // Scales the front/back labels properly.
 
       const col = i % perRow;
       const row = Math.floor(i / perRow);
@@ -110,6 +105,8 @@ export class Game {
 
   handleReveal(coin) {
     const textures = state.textures;
+    const ticketPrice = state.ticketPrice;
+    let prizeString = "";
     if (coin.isWinningRow) {
       // Shows the revealed chest and number.
       coin.setReveal(textures.treasure_chest_revealed, coin.number);
@@ -119,16 +116,26 @@ export class Game {
         this.setPlayerCoinsEnabled(true); // Unlocks the coins.
       }
     } else {
-      if (Object.keys(state.gameData.instantWins).includes(coin.number.toString())) {
+      const numKey = coin.number.toString();
+
+      // Instant Win coins (IW1, IW2, IW3).
+      if (state.gameData.instantWins[numKey]) {
+        const winAmount = state.gameData.instantWins[numKey][ticketPrice];
+        state.winThisTicket += winAmount;
+        prizeString = `£${(winAmount / 100).toFixed(2)}`;
         coin.setReveal(
           textures.barrel_of_coins_revealed,
-          `+${state.gameData.instantWins[coin.number][state.ticketPrice] / 100}`
+          coin.number,
+          prizeString
         );
-        state.winThisTicket += state.gameData.instantWins[coin.number][state.ticketPrice];
         this.ui.updateTicketWinDisplay();
+
+        // Matching the winning numbers.
       } else if (state.winningNumbers.includes(coin.number)) {
-        coin.setReveal(textures.treasure_chest_revealed_GREEN, coin.number);
-        state.winThisTicket += state.ticketPrice * state.gameData.prizeMultipliers.match;
+        const winAmount = ticketPrice * state.gameData.prizeMultipliers.match;
+        state.winThisTicket += winAmount;
+        prizeString = `£${(winAmount / 100).toFixed(2)}`;
+        coin.setReveal(textures.treasure_chest_revealed_GREEN, coin.number, prizeString);
         this.ui.updateTicketWinDisplay();
 
         // Flips the matching winning chest, green.
@@ -137,9 +144,12 @@ export class Game {
             wc.back.texture = textures.treasure_chest_revealed_GREEN;
           }
         });
+
+        // Losing coin.
       } else {
-        coin.setReveal(textures.pirate_ship_revealed_red, coin.number);
+        coin.setReveal(textures.pirate_ship_revealed_red, coin.number.toString(), "");
       }
+      
       // --- Ends the ticket when all the coins have been revealed ---
       const allRevealed = this.playerContainer.children.every((c) => c.revealed);
       if (allRevealed) {

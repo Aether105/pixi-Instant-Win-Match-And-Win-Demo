@@ -44,6 +44,17 @@ export default class Coin extends Container {
     this.label.visible = false;
     this.addChild(this.label);
 
+    // Label for the prize (below the number).
+    this.prizeLabel = new Text('', {
+      fill: 0xffff00,
+      fontSize: 16,
+      fontWeight: 'bold'
+    });
+    this.prizeLabel.anchor.set(0.5);
+    this.prizeLabel.visible = false;
+    this.prizeLabel.y = 20; // Slightly lower positioned than the number.
+    this.addChild(this.prizeLabel);
+
     this.interactive = true;
     this.cursor = 'pointer';
 
@@ -76,12 +87,16 @@ export default class Coin extends Container {
     this.back.width = this.defaultSize * scale;
     this.back.height = this.defaultSize * scale;
     this.label.style.fontSize = 20 * scale;
+    this.prizeLabel.style.fontSize = 16 * scale;
+    this.prizeLabel.y = 20 * scale;
   }
 
   // Calls this from Game.handleReveal to set the revealed texture and text.
-  setReveal(texture, text){
+  setReveal(texture, numberText, prizeText){
     this.back.texture = texture;
-    this.label.text = text || '';
-    this.label.visible = !!text;
+    this.label.text = numberText || '';
+    this.label.visible = !!numberText;
+    this.prizeLabel.text = prizeText || '';
+    this.prizeLabel.visible = !!prizeText;
   }
 }
