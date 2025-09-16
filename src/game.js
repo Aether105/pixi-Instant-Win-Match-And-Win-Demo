@@ -18,7 +18,14 @@ export class Game {
     this.winningTitle = new Text("Winning Coins", {
       fill: 0xffff00,
       fontSize: 32,
-      fontWeight: 'bold'
+      fontWeight: 'bold',
+      stroke: 0x000000,
+      strokeThickness: 4,
+      dropShadow: true,
+      dropShadowColor: 0x000000,
+      dropShadowDistance: 2,
+      dropShadowBlur: 2,
+      resolution: 2
     });
     this.winningTitle.anchor.set(0.5);
     this.container.addChild(this.winningTitle);
@@ -27,7 +34,14 @@ export class Game {
     this.playerTitle = new Text("Player Coins", {
       fill: 0xffff00,
       fontSize: 32,
-      fontWeight: 'bold'
+      fontWeight: 'bold',
+      stroke: 0x000000,
+      strokeThickness: 4,
+      dropShadow: true,
+      dropShadowColor: 0x000000,
+      dropShadowDistance: 2,
+      dropShadowBlur: 2,
+      resolution: 2
     });
     this.playerTitle.anchor.set(0.5);
     this.container.addChild(this.playerTitle);
@@ -280,7 +294,7 @@ export class Game {
 
     // Places that pivot at the centre of the screen with top offset.
     const infoHeight = this.ui?.infoPanel?.height || 150;
-    const topOffSet = 60;
+    const topOffSet = 45;
     this.container.position.set(this.app.screen.width * 0.5, topOffSet);
 
     // Scales down the container so it doesn't overlap the infometer.
