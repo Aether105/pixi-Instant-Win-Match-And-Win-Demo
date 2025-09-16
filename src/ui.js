@@ -123,17 +123,23 @@ export class UI {
 
     this.overlayBg = new Graphics()
       .rect(0, 0, app.screen.width, app.screen.height)
-      .fill({ color: 0x000000, alpha: 0.7 });
+      .fill({ color: 0x000000, alpha: 0.5 });
     this.overlay.addChild(this.overlayBg);
 
     this.overlayText = new Text("", {
       fill: 0xffff00,
-      fontSize: 64,
+      fontSize: 72,
       fontWeight: 'bold',
       align: 'center',
     });
     this.overlayText.anchor.set(0.5);
     this.overlay.addChild(this.overlayText);
+
+    // Effects containers.
+    this.sparkleContiner = new Container();
+    this.glitterContainer = new Container();
+    this.overlay.addChild(this.sparkleContiner);
+    this.overlay.addChild(this.glitterContainer);
 
     this.overlay.visible = false;
     this.container.addChild(this.overlay); // Last, on top.
@@ -162,14 +168,84 @@ export class UI {
   }
 
   showOverlay(message, colour = 0xffff00) {
+    this.overlayBg.clear()
+      .rect(0, 0, this.app.screen.width, this.app.screen.height)
+      .fill({ color: 0x000000, alpha: 0.5 });
+
     this.overlayText.text = message;
     this.overlayText.style.fill = colour;
     this.overlayText.x = this.app.screen.width * 0.5;
     this.overlayText.y = this.app.screen.height * 0.5;
-    this.overlayBg.width = this.app.screen.width;
-    this.overlayBg.height = this.app.screen.height;
     this.overlay.visible = true;
     this.overlay.alpha = 0;
+
+    this.sparkleContiner.removeChildren();
+    this.glitterContainer.removeChildren();
+
+    // Pulse text.
+    this.overlayText.scale.set(1);
+    gsap.to(this.overlayText.scale, {
+      x: 1.3,
+      y: 1.3,
+      yoyo: true,
+      repeat: 3,
+      duration: 0.25,
+    });
+
+    if (colour === 0x00ff00){
+      // A win will sparkle outwards.
+      for (let i = 0; i < 40; i++){
+        const size = 2 + Math.random() * 4;
+        const sparkle = new Graphics().circle(0, 0, size).fill(0xffff66);
+        sparkle.x = this.overlayText.x;
+        sparkle.y = this.overlayText.y;
+        this.sparkleContiner.addChild(sparkle);
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 150 + Math.random() * 200;
+        const tx = sparkle.x + Math.cos(angle) * distance;
+        const ty = sparkle.y + Math.sin(angle) * distance;
+        gsap.to(sparkle, {
+          x: tx,
+          y: ty,
+          alpha: 0,
+          duration: 1 + Math.random() * 0.5,
+          rotation: Math.random() * Math.PI * 2,
+          onComplete: () => this.sparkleContiner.removeChildren(sparkle),
+        });
+      }
+      // Glitter rain effect.
+      for (let i = 0; i < 50; i++){
+        const size = 2 + Math.random() * 3;
+        const glitter = new Graphics().circle(0, 0, size).fill(0xffffff);
+        glitter.x = Math.random() * this.app.screen.width;
+        glitter.y = -20;
+        this.glitterContainer.addChild(glitter);
+        gsap.to(glitter, {
+          y: this.app.screen.height + 50,
+          alpha: 0,
+          duration: 1.5 + Math.random(),
+          onComplete: () => this.glitterContainer.removeChildren(glitter),
+        });
+      }
+    } else {
+      // On a loss, the overlay will shake/flash.
+      gsap.fromTo(
+        this.overlayBg,
+        { alpha: 0.5 },
+        { alpha: 1, yoyo: true, repeat: 3, duration: 0.1 }
+      );
+      gsap.fromTo(
+        this.overlayText,
+        { x: this.overlayText.x - 10 },
+        {
+          x: this.overlayText.x + 10,
+          yoyo: true,
+          repeat: 6,
+          duration: 0.05,
+        }
+      );
+    }
+
     gsap.to(this.overlay, { alpha: 1, duration: 0.5 });
     setTimeout(() => {
       gsap.to(this.overlay, { alpha: 0, duration: 0.5, onComplete: () => (this.overlay.visible = false), });

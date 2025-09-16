@@ -73,7 +73,7 @@ export default class Coin extends Container {
           }
           this.front.visible = false;
           this.back.visible = true;
-          gsap.to(this.scale, { x: 1, duration: 0.3 });
+          gsap.to(this.scale, { x: 1, duration: 0.1 });
         },
       });
     });
