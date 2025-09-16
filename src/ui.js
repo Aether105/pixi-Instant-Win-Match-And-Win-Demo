@@ -128,7 +128,7 @@ export class UI {
 
     this.overlayText = new Text("", {
       fill: 0xffff00,
-      fontSize: 72,
+      fontSize: 64,
       fontWeight: 'bold',
       align: 'center',
     });

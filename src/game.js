@@ -13,6 +13,8 @@ export class Game {
     this.ui = ui;
 
     this.container = new Container();
+    this.pulseTimer = 0;
+    this.pulseDirection = 1;
 
     // Winning Coins title.
     this.winningTitle = new Text("Winning Coins", {
@@ -53,6 +55,25 @@ export class Game {
     // Container for player number coins.
     this.playerContainer = new Container();
     this.container.addChild(this.playerContainer);
+
+    // Adds a ticker for the pulsing effect.
+    this.app.ticker.add(this.update.bind(this));
+  }
+
+  // Ticker update loop for the pulsing effect.
+  update(ticker){
+    const delta = ticker.deltaMS / 1000;
+    this.pulseTimer += delta * this.pulseDirection;
+
+    // Reverses the pulse direction when the limits are reached.
+    if (this.pulseTimer > 1 || this.pulseTimer < 0) {
+      this.pulseDirection *= -1;
+      this.pulseTimer = Math.max(0, Math.min(1, this.pulseTimer)); // Clamps the value.
+    }
+
+    const scale = 1 + Math.sin(this.pulseTimer * Math.PI) * 0.05; // A 5% scale change.
+    this.winningTitle.scale.set(scale);
+    this.playerTitle.scale.set(scale);
   }
 
   // Enables/disables both rows.
@@ -225,6 +246,8 @@ export class Game {
     this.ui.updateBalanceDisplay(-state.ticketPrice);
 
     state.ticketInProgress = true;
+    state.winThisTicket = 0;
+    this.ui.updateTicketWinDisplay();
 
     // Makes sure that only the winning coins are clickable at first.
     this.setAllCoinsEnabled(false);
