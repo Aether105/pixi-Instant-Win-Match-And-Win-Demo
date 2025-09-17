@@ -15,7 +15,8 @@
         { "alias": "play_button", "src": "./assets/play_button.png" },
         { "alias": "info_meter", "src": "./assets/info_meter.png" },
         { "alias": "plus", "src": "./assets/plus.png" }, 
-        { "alias": "minus", "src": "./assets/minus.png" }
+        { "alias": "minus", "src": "./assets/minus.png" },
+        { "alias": "explosion", "src": "./assets/explosion.png" }
       ]
     }
   ]

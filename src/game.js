@@ -197,9 +197,6 @@ export class Game {
   startNewTicket() {
     state.ticketInProgress = false;
 
-    state.winThisTicket = 0;
-    this.ui.updateTicketWinDisplay(); // Resets the ticket win.
-
     // Clears the containers and builds new coins.
     this.winningContainer.removeChildren();
     this.playerContainer.removeChildren();

@@ -8,6 +8,7 @@ export default class Coin extends Container {
     this.isWinningRow = isWinningRow;
     this.revealed = false;
     this.onReveal = onReveal;
+    this.textures = textures;
 
     const frontTex = isWinningRow ? textures.treasure_chest : textures.pirate_ship;
 
@@ -64,17 +65,41 @@ export default class Coin extends Container {
       this.interactive = false;
       this.cursor = 'default';
 
-      gsap.to(this.scale, {
-        x: 0,
-        duration: 0.3,
+      // Hides the coin's front to reveal the empty space before the explosion.
+      this.front.visible = false;
+
+      // Creates and shows the explosion sprite.
+      const explosion = new Sprite(this.textures.explosion);
+      explosion.anchor.set(0.5);
+      explosion.width = this.front.width * 1.5; // Makes it bigger than the coin.
+      explosion.height = this.front.height * 1.5;
+      explosion.alpha = 1;
+      this.addChildAt(explosion, 0); // Adds the explosion to the container at index 0 to place it behind the coin.
+
+      gsap.to(explosion, {
+        alpha: 0,
+        duration: 0.15, // Keeps the explosion fade snappy.
         onComplete: () => {
-          if (this.onReveal){
-            this.onReveal(this);
-          }
-          this.front.visible = false;
-          this.back.visible = true;
-          gsap.to(this.scale, { x: 1, duration: 0.1 });
-        },
+          this.removeChild(explosion); // Removes it after the animation.
+
+          // Flip animation.
+          gsap.to(this.scale, {
+            x: 0,
+            duration: 0.2,
+            ease: "power2.in", // Gives a smoother spin transition.
+            onComplete: () => {
+              if (this.onReveal){
+                this.onReveal(this);
+              }
+              this.back.visible = true;
+              gsap.to(this.scale, {
+                x: 1,
+                duration: 0.15,
+                ease: "power2.out"
+              });
+            },
+          });
+        }
       });
     });
   }
