@@ -85,7 +85,8 @@ export class UI {
     this.balanceText = new Text("", {
       fill: 0xffff00,
       fontSize: 42,
-      fontWeight: 'bold' });
+      fontWeight: 'bold'
+    });
     this.balanceText.anchor.set(0.5);
     this.infoMtr.addChild(this.balanceText);
     this.balanceText.x = this.priceText.x + 410;
@@ -101,6 +102,48 @@ export class UI {
     this.infoMtr.addChild(this.ticketWinText);
     this.ticketWinText.x = this.balanceText.x + 435;
     this.ticketWinText.y = this.balanceText.y;
+
+    // Text above the above.
+    this.priceLabel = new Text("TICKET", {
+      fill: 0xffff00,
+      fontSize: 50,
+      fontWeight: 'bold'
+    });
+    this.priceLabel.anchor.set(0.5);
+    this.priceLabel.x = this.priceText.x;
+    this.priceLabel.y = this.priceText.y - 170;
+    this.infoMtr.addChild(this.priceLabel);
+
+    this.balanceLabel = new Text("BALANCE", {
+      fill: 0xffff00,
+      fontSize: 50,
+      fontWeight: 'bold'
+    });
+    this.balanceLabel.anchor.set(0.5);
+    this.balanceLabel.x = this.balanceText.x;
+    this.balanceLabel.y = this.balanceText.y - 170;
+    this.infoMtr.addChild(this.balanceLabel);
+
+    this.winLabel = new Text("WIN", {
+      fill: 0xffff00,
+      fontSize: 50,
+      fontWeight: 'bold'
+    });
+    this.winLabel.anchor.set(0.5);
+    this.winLabel.x = this.ticketWinText.x;
+    this.winLabel.y = this.ticketWinText.y - 170;
+    this.infoMtr.addChild(this.winLabel);
+
+    // Adds an alpha glow to the labels.
+    [this.priceLabel, this.balanceLabel, this.winLabel].forEach(label => {
+      gsap.to(label, {
+        alpha: 0.5,
+        duration: 1,
+        yoyo: true,
+        repeat: -1,
+        ease: "sine.inOut"
+      });
+    });
 
     this.infoMinus.on('pointerdown', () => {
       const index = state.gameData.ticketPrices.indexOf(state.ticketPrice);
@@ -154,6 +197,7 @@ export class UI {
 
   updatePriceDisplay() {
     this.priceText.text = `£${(state.ticketPrice / 100).toFixed(2)}`;
+    this.animateValue(this.priceText);
   }
 
   updateBalanceDisplay(change = 0) {
@@ -161,10 +205,20 @@ export class UI {
 
     this.balanceText.style.fill =
       change > 0 ? 0x00ff00 : change < 0 ? 0xff0000 : 0xffff00;
+
+    this.animateValue(this.balanceText);
   }
 
   updateTicketWinDisplay() {
     this.ticketWinText.text = `£${(state.winThisTicket / 100).toFixed(2)}`;
+    this.animateValue(this.ticketWinText);
+  }
+
+  // Animates the info-meter values subtly.
+  animateValue(textObj){
+    gsap.fromTo(textObj.scale,
+      { x: 1, y: 1 },
+      { x: 1.15, y: 1.15, duration: 0.2, yoyo: true, repeat: 1, ease: "power1.out"});
   }
 
   showOverlay(message, colour = 0xffff00) {
@@ -192,9 +246,9 @@ export class UI {
       duration: 0.25,
     });
 
-    if (colour === 0x00ff00){
+    if (colour === 0x00ff00) {
       // A win will sparkle outwards.
-      for (let i = 0; i < 40; i++){
+      for (let i = 0; i < 40; i++) {
         const size = 2 + Math.random() * 4;
         const sparkle = new Graphics().circle(0, 0, size).fill(0xffff66);
         sparkle.x = this.overlayText.x;
@@ -214,7 +268,7 @@ export class UI {
         });
       }
       // Glitter rain effect.
-      for (let i = 0; i < 50; i++){
+      for (let i = 0; i < 50; i++) {
         const size = 2 + Math.random() * 3;
         const glitter = new Graphics().circle(0, 0, size).fill(0xffffff);
         glitter.x = Math.random() * this.app.screen.width;
